@@ -6,7 +6,9 @@ import {
   getPolicyReviewMeta,
   lookupEhgFamiliesGrant,
   POLICY_CONFIG as POLICY,
+  type BtoProject,
 } from "./policies/policyConfig";
+import { getBtoProjectsCached } from "./policies/btoDatasource";
 import "./App.css";
 
 type FlatType = "2-room" | "3-room" | "4-room" | "5-room" | "executive";
@@ -264,6 +266,7 @@ function App() {
   const [appMode, setAppMode] = useState<AppMode>("welcome");
   const [selectedBtoProject, setSelectedBtoProject] = useState<string | null>(null);
   const [segmentFilter, setSegmentFilter] = useState<SegmentFilter>("all");
+  const [btoProjects, setBtoProjects] = useState<BtoProject[]>([]);
   const lastScrollYRef = useRef(0);
   const tabPanelContentRef = useRef<HTMLDivElement | null>(null);
   const [tabStageMinHeight, setTabStageMinHeight] = useState<number>(720);
@@ -281,6 +284,21 @@ function App() {
   useEffect(() => {
     window.localStorage.setItem("hdb-planner-theme", themeMode);
   }, [themeMode]);
+
+  useEffect(() => {
+    // Fetch BTO projects from data source (real API or fallback)
+    const loadBtoProjects = async () => {
+      try {
+        const projects = await getBtoProjectsCached();
+        setBtoProjects(projects);
+      } catch (error) {
+        console.error("Failed to load BTO projects:", error);
+        setBtoProjects([]); // Empty array on error
+      }
+    };
+
+    loadBtoProjects();
+  }, []);
 
   useLayoutEffect(() => {
     const content = tabPanelContentRef.current;
@@ -419,10 +437,11 @@ function App() {
           </div>
         </header>
         <WelcomeScreen
+          btoProjects={btoProjects}
           onSelectBtoProject={(projectId, flatType) => {
             setSelectedBtoProject(projectId);
             setAppMode("planner");
-            setFormValues(applyBtoProjectToForm(formValues, projectId, flatType));
+            setFormValues(applyBtoProjectToForm(formValues, btoProjects, projectId, flatType));
             setActiveTab("property-loan");
           }}
           onSkipToPlanExisting={() => {
@@ -784,7 +803,7 @@ function App() {
               {selectedBtoProject && (
                 <div className="autofill-notice">
                   <p className="autofill-notice-text">
-                    ✓ <strong>Auto-filled from BTO:</strong> {getSelectedBtoInfo(selectedBtoProject, formValues.flatType as FlatType)?.projectName}
+                    ✓ <strong>Auto-filled from BTO:</strong> {getSelectedBtoInfo(btoProjects, selectedBtoProject, formValues.flatType as FlatType)?.projectName}
                   </p>
                   <p className="small">
                     The following were auto-filled: flat type, price, financing mode, downpayment scheme, and loan tenure. You can adjust any of these below.
@@ -1293,9 +1312,9 @@ function RangeField(props: {
   );
 }
 
-function getSelectedBtoInfo(projectId: string | null, flatType: FlatType): { projectName: string; variantInfo: string } | null {
+function getSelectedBtoInfo(projects: BtoProject[], projectId: string | null, flatType: FlatType): { projectName: string; variantInfo: string } | null {
   if (!projectId) return null;
-  const project = getBtoProject(projectId);
+  const project = getBtoProject(projects, projectId);
   if (!project) return null;
   const variant = project.flatVariants.find((v) => v.type === flatType);
   if (!variant) return null;
@@ -1306,10 +1325,11 @@ function getSelectedBtoInfo(projectId: string | null, flatType: FlatType): { pro
 }
 
 function WelcomeScreen(props: {
+  btoProjects: BtoProject[];
   onSelectBtoProject: (projectId: string, flatType: FlatType) => void;
   onSkipToPlanExisting: () => void;
 }) {
-  const btoMonths = Object.keys(getBtoProjectsByLaunchMonth()).sort();
+  const btoMonths = Object.keys(getBtoProjectsByLaunchMonth(props.btoProjects)).sort();
   
   return (
     <div className="welcome-screen">
@@ -1326,7 +1346,7 @@ function WelcomeScreen(props: {
             
             <div className="bto-timeline">
               {btoMonths.map((month) => {
-                const projects = getBtoProjectsByLaunchMonth()[month];
+                const projects = getBtoProjectsByLaunchMonth(props.btoProjects)[month];
                 return (
                   <div key={month} className="bto-month">
                     <div className="month-header">{month}</div>
@@ -1886,9 +1906,9 @@ function getInitialThemeMode(): ThemeMode {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-function getBtoProjectsByLaunchMonth() {
-  const grouped: Record<string, (typeof POLICY.btoProjects)[number][]> = {};
-  for (const project of POLICY.btoProjects) {
+function getBtoProjectsByLaunchMonth(projects: BtoProject[]) {
+  const grouped: Record<string, BtoProject[]> = {};
+  for (const project of projects) {
     if (!grouped[project.launchMonth]) {
       grouped[project.launchMonth] = [];
     }
@@ -1897,12 +1917,12 @@ function getBtoProjectsByLaunchMonth() {
   return grouped;
 }
 
-function getBtoProject(projectId: string) {
-  return POLICY.btoProjects.find((p) => p.id === projectId);
+function getBtoProject(projects: BtoProject[], projectId: string) {
+  return projects.find((p) => p.id === projectId);
 }
 
-function applyBtoProjectToForm(form: PlannerFormValues, projectId: string, flatType: FlatType): PlannerFormValues {
-  const project = getBtoProject(projectId);
+function applyBtoProjectToForm(form: PlannerFormValues, projects: BtoProject[], projectId: string, flatType: FlatType): PlannerFormValues {
+  const project = getBtoProject(projects, projectId);
   if (!project) return form;
   
   const variant = project.flatVariants.find((v) => v.type === flatType);
