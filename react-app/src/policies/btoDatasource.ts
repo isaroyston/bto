@@ -1,63 +1,63 @@
 import type { BtoProject, BtoFlatVariant } from "./policyConfig";
 
 /**
- * Fallback hardcoded BTO projects (sample data from recent launches)
+ * Fallback hardcoded BTO projects (sample data from recent launces)
  * These are updated periodically - ideally fetched from HDB API
  */
 const FALLBACK_BTO_PROJECTS: BtoProject[] = [
   {
-    id: "belayar-2026-06",
+    id: "yung-ho-2026-06",
     launchMonth: "2026-06",
-    name: "Belayang Project",
-    location: "Ang Mo Kio",
-    district: "AMK",
+    name: "Yung Ho Road",
+    location: "Tiong Bahru",
+    district: "TB",
     suggestedFinancing: "hdb",
     suggestedScheme: "normal",
     flatVariants: [
-      { type: "3-room", basePrice: 520000, maxEhg: 85000, suggestedOccupants: 3, suggestedTenureYears: 25 },
-      { type: "4-room", basePrice: 650000, maxEhg: 110000, suggestedOccupants: 4, suggestedTenureYears: 25 },
-      { type: "5-room", basePrice: 780000, maxEhg: 130000, suggestedOccupants: 5, suggestedTenureYears: 30 },
+      { type: "3-room", basePrice: 475000, maxEhg: 85000, suggestedOccupants: 3, suggestedTenureYears: 25 },
+      { type: "4-room", basePrice: 595000, maxEhg: 110000, suggestedOccupants: 4, suggestedTenureYears: 25 },
+      { type: "5-room", basePrice: 715000, maxEhg: 130000, suggestedOccupants: 5, suggestedTenureYears: 30 },
     ],
   },
   {
-    id: "riveria-2026-06",
+    id: "bedok-north-2026-06",
     launchMonth: "2026-06",
-    name: "Riveria Heights",
-    location: "Punggol",
-    district: "PG",
+    name: "Bedok North",
+    location: "Bedok",
+    district: "BD",
     suggestedFinancing: "hdb",
     suggestedScheme: "normal",
     flatVariants: [
-      { type: "3-room", basePrice: 550000, maxEhg: 85000, suggestedOccupants: 3, suggestedTenureYears: 25 },
-      { type: "4-room", basePrice: 680000, maxEhg: 110000, suggestedOccupants: 4, suggestedTenureYears: 25 },
-      { type: "5-room", basePrice: 810000, maxEhg: 130000, suggestedOccupants: 5, suggestedTenureYears: 30 },
+      { type: "3-room", basePrice: 485000, maxEhg: 85000, suggestedOccupants: 3, suggestedTenureYears: 25 },
+      { type: "4-room", basePrice: 615000, maxEhg: 110000, suggestedOccupants: 4, suggestedTenureYears: 25 },
+      { type: "5-room", basePrice: 735000, maxEhg: 130000, suggestedOccupants: 5, suggestedTenureYears: 30 },
     ],
   },
   {
-    id: "kovan-2026-08",
+    id: "tengah-2026-08",
     launchMonth: "2026-08",
-    name: "Kovan Towers",
-    location: "Hougang",
-    district: "HG",
+    name: "Tengah",
+    location: "Tengah",
+    district: "TG",
     suggestedFinancing: "hdb",
     suggestedScheme: "staggered",
     flatVariants: [
-      { type: "3-room", basePrice: 495000, maxEhg: 85000, suggestedOccupants: 3, suggestedTenureYears: 25 },
-      { type: "4-room", basePrice: 625000, maxEhg: 110000, suggestedOccupants: 4, suggestedTenureYears: 25 },
-      { type: "5-room", basePrice: 750000, maxEhg: 130000, suggestedOccupants: 5, suggestedTenureYears: 30 },
+      { type: "3-room", basePrice: 425000, maxEhg: 85000, suggestedOccupants: 3, suggestedTenureYears: 25 },
+      { type: "4-room", basePrice: 545000, maxEhg: 110000, suggestedOccupants: 4, suggestedTenureYears: 25 },
+      { type: "5-room", basePrice: 665000, maxEhg: 130000, suggestedOccupants: 5, suggestedTenureYears: 30 },
     ],
   },
   {
-    id: "marina-2026-08",
+    id: "sengkang-2026-08",
     launchMonth: "2026-08",
-    name: "Marina Square East",
-    location: "Marine Parade",
-    district: "MP",
+    name: "Sengkang",
+    location: "Sengkang",
+    district: "SK",
     suggestedFinancing: "hdb",
     suggestedScheme: "normal",
     flatVariants: [
-      { type: "4-room", basePrice: 720000, maxEhg: 110000, suggestedOccupants: 4, suggestedTenureYears: 25 },
-      { type: "5-room", basePrice: 860000, maxEhg: 130000, suggestedOccupants: 5, suggestedTenureYears: 30 },
+      { type: "4-room", basePrice: 625000, maxEhg: 110000, suggestedOccupants: 4, suggestedTenureYears: 25 },
+      { type: "5-room", basePrice: 750000, maxEhg: 130000, suggestedOccupants: 5, suggestedTenureYears: 30 },
     ],
   },
 ];
@@ -65,11 +65,14 @@ const FALLBACK_BTO_PROJECTS: BtoProject[] = [
 /**
  * Fetch BTO project data from data.gov.sg HDB dataset
  * This is the official public data source for HDB information
+ * 
+ * Note: The resource_id may need updating - check data.gov.sg/datasets for latest HDB BTO launches
+ * Alternative: Can scrape https://www.hdb.gov.sg/bto or use HDB's undocumented API
  */
 async function fetchFromDataGovSg(): Promise<BtoProject[] | null> {
   try {
-    // data.gov.sg houses HDB BTO launch data
-    // Using their API to fetch recent BTO launches
+    // Try fetching from data.gov.sg HDB BTO dataset
+    // Resource ID should be for HDB BTO project launches
     const response = await fetch(
       "https://data.gov.sg/api/action/datastore_search?" +
         "resource_id=66e148a8-70dd-4eda-8ef8-8d53b18c1e23&limit=100"
