@@ -1464,6 +1464,39 @@ th {
   transform: translateY(0);
 }
 
+/* Autofill Indicators */
+.autofill-notice {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.2rem;
+  background: rgba(22, 97, 64, 0.08);
+  border-left: 4px solid var(--success);
+  border-radius: 6px;
+}
+
+.autofill-notice-text {
+  margin: 0 0 0.5rem 0;
+  color: var(--success);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.autofill-notice .small {
+  margin: 0;
+  color: var(--muted);
+}
+
+.autofill-badge {
+  display: inline-block;
+  background: rgba(22, 97, 64, 0.12);
+  color: var(--success);
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+  white-space: nowrap;
+}
+
 /* Segment Filter */
 .segment-filter {
   display: flex;

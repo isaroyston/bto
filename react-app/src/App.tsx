@@ -262,6 +262,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<TabKey>("profile");
   const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialThemeMode);
   const [appMode, setAppMode] = useState<AppMode>("welcome");
+  const [selectedBtoProject, setSelectedBtoProject] = useState<string | null>(null);
   const [segmentFilter, setSegmentFilter] = useState<SegmentFilter>("all");
   const lastScrollYRef = useRef(0);
   const tabPanelContentRef = useRef<HTMLDivElement | null>(null);
@@ -418,9 +419,10 @@ function App() {
           </div>
         </header>
         <WelcomeScreen
-          onSelectBtoProject={(projectId) => {
+          onSelectBtoProject={(projectId, flatType) => {
+            setSelectedBtoProject(projectId);
             setAppMode("planner");
-            setFormValues(applyBtoProjectToForm(formValues, projectId, "4-room"));
+            setFormValues(applyBtoProjectToForm(formValues, projectId, flatType));
             setActiveTab("property-loan");
           }}
           onSkipToPlanExisting={() => {
@@ -778,6 +780,17 @@ function App() {
                   </p>
                 </div>
               </div>
+
+              {selectedBtoProject && (
+                <div className="autofill-notice">
+                  <p className="autofill-notice-text">
+                    ✓ <strong>Auto-filled from BTO:</strong> {getSelectedBtoInfo(selectedBtoProject, formValues.flatType as FlatType)?.projectName}
+                  </p>
+                  <p className="small">
+                    The following were auto-filled: flat type, price, financing mode, downpayment scheme, and loan tenure. You can adjust any of these below.
+                  </p>
+                </div>
+              )}
 
               <div className="split-grid">
                 <article className="subpanel">
@@ -1280,8 +1293,20 @@ function RangeField(props: {
   );
 }
 
+function getSelectedBtoInfo(projectId: string | null, flatType: FlatType): { projectName: string; variantInfo: string } | null {
+  if (!projectId) return null;
+  const project = getBtoProject(projectId);
+  if (!project) return null;
+  const variant = project.flatVariants.find((v) => v.type === flatType);
+  if (!variant) return null;
+  return {
+    projectName: `${project.name} (${project.launchMonth})`,
+    variantInfo: `${flatType} · ${toCurrency(variant.basePrice)}`,
+  };
+}
+
 function WelcomeScreen(props: {
-  onSelectBtoProject: (projectId: string) => void;
+  onSelectBtoProject: (projectId: string, flatType: FlatType) => void;
   onSkipToPlanExisting: () => void;
 }) {
   const btoMonths = Object.keys(getBtoProjectsByLaunchMonth()).sort();
@@ -1315,7 +1340,7 @@ function WelcomeScreen(props: {
                               <button
                                 key={variant.type}
                                 className="flat-type-btn"
-                                onClick={() => props.onSelectBtoProject(project.id)}
+                                onClick={() => props.onSelectBtoProject(project.id, variant.type)}
                               >
                                 {variant.type}
                               </button>
@@ -1883,11 +1908,38 @@ function applyBtoProjectToForm(form: PlannerFormValues, projectId: string, flatT
   const variant = project.flatVariants.find((v) => v.type === flatType);
   if (!variant) return form;
   
-  return {
+  // Start with form values
+  let updated = {
     ...form,
     flatType: variant.type as FlatType,
     flatPrice: variant.basePrice.toString(),
+    financing: project.suggestedFinancing ?? "hdb",
+    scheme: project.suggestedScheme ?? "normal",
+    loanTenureYears: (variant.suggestedTenureYears ?? 25).toString(),
   };
+  
+  // Adjust household members to suggested occupants
+  if (variant.suggestedOccupants) {
+    const suggestedCount = variant.suggestedOccupants;
+    const currentCount = updated.members.length;
+    
+    if (suggestedCount < currentCount) {
+      // Remove excess members
+      updated = {
+        ...updated,
+        members: updated.members.slice(0, suggestedCount),
+      };
+    } else if (suggestedCount > currentCount) {
+      // Add members
+      const newMembers = [...updated.members];
+      for (let i = currentCount; i < suggestedCount; i++) {
+        newMembers.push(createMember(i));
+      }
+      updated = { ...updated, members: newMembers };
+    }
+  }
+  
+  return updated;
 }
 
 export function createInitialFormValues(): PlannerFormValues {
