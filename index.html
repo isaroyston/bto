@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HDB Payment Planner</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero__bg-shape hero__bg-shape--a"></div>
+      <div class="hero__bg-shape hero__bg-shape--b"></div>
+      <h1>HDB New Flat Payment Planner</h1>
+      <p>
+        Enter your details to estimate stage-by-stage payments, due-date timeline,
+        and reminders. Policies are source-linked and timestamped.
+      </p>
+      <p class="meta" id="policy-meta"></p>
+    </header>
+
+    <main class="layout">
+      <section class="panel panel--form">
+        <h2>Your Inputs</h2>
+        <form id="planner-form">
+          <div class="grid">
+            <label>
+              Scenario Name
+              <input type="text" name="scenarioName" value="My HDB Plan" />
+            </label>
+            <label>
+              Flat Type
+              <select name="flatType" required>
+                <option value="2-room">2-room Flexi</option>
+                <option value="3-room">3-room</option>
+                <option value="4-room" selected>4-room</option>
+                <option value="5-room">5-room / 3-Gen</option>
+                <option value="executive">Executive / Multi-Generation</option>
+              </select>
+            </label>
+            <label>
+              Flat Price (SGD)
+              <input type="number" name="flatPrice" min="0" step="1000" value="650000" required />
+            </label>
+            <label>
+              EHG Grant Amount (SGD)
+              <input type="number" name="ehgGrant" min="0" step="1000" value="0" />
+            </label>
+            <label>
+              Monthly Household Income (SGD)
+              <input type="number" name="monthlyIncome" min="0" step="100" value="11500" />
+            </label>
+            <label>
+              Marital Status
+              <select name="maritalStatus">
+                <option value="single">Single</option>
+                <option value="married" selected>Married</option>
+                <option value="divorced">Divorced</option>
+                <option value="widowed">Widowed</option>
+              </select>
+            </label>
+            <label>
+              Financing Option
+              <select name="financing" required>
+                <option value="hdb" selected>HDB Loan</option>
+                <option value="bank">Bank Loan</option>
+                <option value="none">No Housing Loan</option>
+              </select>
+            </label>
+            <label>
+              Downpayment Scheme
+              <select name="scheme" required>
+                <option value="normal">Normal</option>
+                <option value="staggered">Staggered Downpayment Scheme</option>
+                <option value="dia" selected>Deferred Income Assessment (DIA)</option>
+              </select>
+            </label>
+            <label>
+              Loan-to-Value Ratio (%)
+              <input type="number" name="ltvRatio" min="0" max="100" step="0.1" value="75" />
+            </label>
+            <label>
+              BTO Completion Offset (months)
+              <input type="number" name="completionMonths" min="1" max="84" value="42" />
+            </label>
+          </div>
+
+          <h3>Known Milestone Dates (Optional)</h3>
+          <div class="grid">
+            <label>
+              Application Date
+              <input type="date" name="applicationDate" required />
+            </label>
+            <label>
+              Ballot Result Date
+              <input type="date" name="ballotDate" />
+            </label>
+            <label>
+              Booking Date
+              <input type="date" name="bookingDate" />
+            </label>
+            <label>
+              Agreement for Lease Date
+              <input type="date" name="agreementDate" />
+            </label>
+            <label>
+              Key Collection Date
+              <input type="date" name="keyDate" />
+            </label>
+          </div>
+
+          <h3>Planning Options</h3>
+          <div class="grid">
+            <label>
+              Registration Fee Override (SGD)
+              <input type="number" name="registrationFeeOverride" min="0" step="0.01" placeholder="Auto" />
+            </label>
+            <label>
+              GST Rate for Legal Fee (%)
+              <input type="number" name="gstRate" min="0" step="0.1" value="9" />
+            </label>
+            <label class="checkbox">
+              <input type="checkbox" name="usingCpfInstalments" checked />
+              Using CPF for housing instalments (for HPS guidance)
+            </label>
+          </div>
+
+          <div class="actions">
+            <button type="submit">Calculate Plan</button>
+            <button type="button" id="export-ics">Export .ics Reminder File</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel panel--results">
+        <h2>Estimated Plan</h2>
+        <div class="cards" id="summary-cards"></div>
+
+        <h3>Milestone Timeline</h3>
+        <ol class="timeline" id="timeline"></ol>
+
+        <h3>Payments Table</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Stage</th>
+                <th>Fee Item</th>
+                <th>Amount (SGD)</th>
+                <th>Estimated Date</th>
+                <th>Payment Modes</th>
+                <th>Remarks</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody id="schedule-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel panel--sources">
+        <h2>Policy Sources</h2>
+        <p class="small">
+          This planner is for budgeting and planning only. Confirm final amounts
+          against official HDB/IRAS/CPF notices and appointment letters.
+        </p>
+        <ul id="source-list"></ul>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>Built for planning Singapore HDB new-flat purchases (BTO flow).</p>
+    </footer>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+# Local Python environment
+.venv/
+
+# Editor and OS files
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Node artifacts
+node_modules/
+dist/
+react-app/node_modules/
+react-app/dist/
