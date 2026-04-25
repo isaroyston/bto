@@ -1319,3 +1319,242 @@ th {
     font-size: 0.64rem;
   }
 }
+
+/* Welcome Screen */
+.welcome-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: calc(100vh - 300px);
+  padding: 4rem 2rem;
+}
+
+.welcome-content {
+  max-width: 1000px;
+  width: 100%;
+}
+
+.welcome-content h2 {
+  font-size: 2.4rem;
+  margin-bottom: 1rem;
+  color: var(--ink);
+}
+
+.welcome-intro {
+  font-size: 1.1rem;
+  color: var(--muted);
+  margin-bottom: 3rem;
+}
+
+.welcome-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+}
+
+.welcome-section {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 2rem;
+}
+
+.welcome-section h3 {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+}
+
+.section-desc {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+}
+
+.bto-timeline {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.bto-month {
+  border-left: 3px solid var(--line-strong);
+  padding-left: 1.5rem;
+}
+
+.month-header {
+  font-weight: 600;
+  color: var(--brand);
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.project-card {
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 1.2rem;
+  transition: background 200ms ease, transform 200ms ease;
+}
+
+.project-card:hover {
+  background: var(--surface-strong);
+  transform: translateY(-2px);
+}
+
+.project-name {
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 0.3rem;
+}
+
+.project-meta {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+.flat-types {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 0.5rem;
+}
+
+.flat-type-btn {
+  background: var(--brand-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.85rem;
+  color: var(--brand);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.flat-type-btn:hover {
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
+}
+
+.welcome-cta {
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms ease;
+  box-shadow: var(--button-shadow);
+}
+
+.welcome-cta:hover {
+  background: var(--brand-strong);
+  transform: translateY(-2px);
+}
+
+.welcome-cta:active {
+  transform: translateY(0);
+}
+
+/* Segment Filter */
+.segment-filter {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.5rem 0;
+  padding: 1.2rem;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+
+.filter-btn:hover {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+}
+
+.filter-btn.is-active {
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
+  font-weight: 600;
+}
+
+/* Back to welcome button */
+.back-to-welcome-btn {
+  background: none;
+  border: none;
+  color: var(--brand);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-right: 1rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  transition: all 150ms ease;
+}
+
+.back-to-welcome-btn:hover {
+  background: var(--brand-soft);
+}
+
+@media (max-width: 760px) {
+  .welcome-sections {
+    grid-template-columns: 1fr;
+  }
+
+  .welcome-content h2 {
+    font-size: 1.8rem;
+  }
+
+  .welcome-intro {
+    font-size: 1rem;
+  }
+
+  .segment-filter {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filter-buttons {
+    width: 100%;
+  }
+
+  .filter-btn {
+    flex: 1;
+    min-width: 80px;
+  }
+}

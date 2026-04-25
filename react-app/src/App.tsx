@@ -22,6 +22,8 @@ type TabKey = "profile" | "property-loan" | "scheme-grants" | "timeline-payments
 type ThemeMode = "light" | "dark";
 type PersonRole = "applicant" | "co-applicant" | "essential-occupier" | "household-member";
 type Citizenship = "singapore-citizen" | "permanent-resident" | "other";
+type AppMode = "welcome" | "planner";
+type SegmentFilter = "all" | "cpf-oa" | "cash-only" | "application" | "booking" | "agreement" | "key";
 
 interface PersonFormValues {
   id: string;
@@ -259,6 +261,8 @@ function App() {
   const [formValues, setFormValues] = useState<PlannerFormValues>(createInitialFormValues);
   const [activeTab, setActiveTab] = useState<TabKey>("profile");
   const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialThemeMode);
+  const [appMode, setAppMode] = useState<AppMode>("welcome");
+  const [segmentFilter, setSegmentFilter] = useState<SegmentFilter>("all");
   const lastScrollYRef = useRef(0);
   const tabPanelContentRef = useRef<HTMLDivElement | null>(null);
   const [tabStageMinHeight, setTabStageMinHeight] = useState<number>(720);
@@ -346,6 +350,33 @@ function App() {
     URL.revokeObjectURL(link.href);
   };
 
+  const filterPaymentsBySegment = (rows: ScheduleRow[], filter: SegmentFilter) => {
+    if (filter === "all") return rows;
+    
+    if (filter === "cpf-oa") {
+      return rows.filter((row) => row.paymentMode === "cpf-oa");
+    }
+    
+    if (filter === "cash-only") {
+      return rows.filter((row) => row.paymentMode === "cash");
+    }
+    
+    // Stage filters
+    const stageMap: Record<string, StageName> = {
+      application: "Application",
+      booking: "Flat Booking",
+      agreement: "Sign Agreement for Lease",
+      key: "Key Collection",
+    };
+    
+    if (filter in stageMap) {
+      const stageName = stageMap[filter] as StageName;
+      return rows.filter((row) => row.stage === stageName);
+    }
+    
+    return rows;
+  };
+
   const handleTabChange = (tabKey: TabKey) => {
     if (tabKey === activeTab) {
       return;
@@ -360,13 +391,65 @@ function App() {
     });
   };
 
+  if (appMode === "welcome") {
+    return (
+      <div className={`app-shell ${themeMode === "dark" ? "theme-dark" : "theme-light"}`}>
+        <header className="hero">
+          <div className="hero-shape hero-shape-a" aria-hidden="true"></div>
+          <div className="hero-shape hero-shape-b" aria-hidden="true"></div>
+          <div className="hero-bar">
+            <p className="eyebrow">Families EHG planner</p>
+            <div className="appearance-switch" role="group" aria-label="Appearance">
+              <button
+                type="button"
+                className={themeMode === "light" ? "appearance-button is-active" : "appearance-button"}
+                onClick={() => setThemeMode("light")}
+              >
+                Light
+              </button>
+              <button
+                type="button"
+                className={themeMode === "dark" ? "appearance-button is-active" : "appearance-button"}
+                onClick={() => setThemeMode("dark")}
+              >
+                Dark
+              </button>
+            </div>
+          </div>
+        </header>
+        <WelcomeScreen
+          onSelectBtoProject={(projectId) => {
+            setAppMode("planner");
+            setFormValues(applyBtoProjectToForm(formValues, projectId, "4-room"));
+            setActiveTab("property-loan");
+          }}
+          onSkipToPlanExisting={() => {
+            setAppMode("planner");
+            setActiveTab("profile");
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={`app-shell ${themeMode === "dark" ? "theme-dark" : "theme-light"}`}>
       <header className="hero">
         <div className="hero-shape hero-shape-a" aria-hidden="true"></div>
         <div className="hero-shape hero-shape-b" aria-hidden="true"></div>
         <div className="hero-bar">
-          <p className="eyebrow">Families EHG planner</p>
+          <p className="eyebrow">
+            {appMode === "planner" && (
+              <button
+                type="button"
+                className="back-to-welcome-btn"
+                onClick={() => setAppMode("welcome")}
+              >
+                ← Back to launches
+              </button>
+            )}
+            Families EHG planner
+          </p>
           <div className="appearance-switch" role="group" aria-label="Appearance">
             <button
               type="button"
@@ -966,6 +1049,8 @@ function App() {
                 />
               </div>
 
+              <SegmentFilter activeFilter={segmentFilter} onChange={setSegmentFilter} />
+
               <article className="subpanel">
                 <div className="subpanel-head">
                   <div>
@@ -1016,80 +1101,88 @@ function App() {
               <OaForecastCard result={result} />
 
               <div className="payment-timeline" aria-label="Payment timeline">
-                {result.paymentGroups.map((group, groupIndex) => (
-                  <article className={`payment-node payment-node-${toStageTone(group.stage)}`} key={group.stage + groupIndex}>
-                    <span className="payment-node-dot" aria-hidden="true">
-                      {toStageIcon(group.stage)}
-                    </span>
-                    <div className="payment-node-main">
-                      <div className="payment-matrix-layout">
-                        <aside className="payment-node-side">
-                          <p className="section-kicker">{group.stage}</p>
-                          <p className="payment-side-date">{formatDate(group.date)}</p>
-                          <div className="payment-node-amount">{toCurrency(group.knownTotal)}</div>
-                          <p className="small">
-                            {group.rows.length} item(s)
-                            {group.rows.some((row) => row.amount === null)
-                              ? ` • ${group.rows.filter((row) => row.amount === null).length} pending`
-                              : ""}
-                          </p>
-                          <div className="payment-side-funding">
-                            <span className="funding-badge funding-cpf">
-                              CPF/OA possible: {toCurrency(getCpfEligibleKnownTotal(group.rows))}
-                            </span>
-                            <span className="funding-badge funding-cash">
-                              Cash-only known: {toCurrency(getCashOnlyKnownTotal(group.rows))}
-                            </span>
+                {result.paymentGroups.map((group, groupIndex) => {
+                  // Apply segment filter to rows
+                  const filteredRows = filterPaymentsBySegment(group.rows, segmentFilter);
+                  
+                  // Skip group if no rows match the filter
+                  if (filteredRows.length === 0) return null;
+                  
+                  return (
+                    <article className={`payment-node payment-node-${toStageTone(group.stage)}`} key={group.stage + groupIndex}>
+                      <span className="payment-node-dot" aria-hidden="true">
+                        {toStageIcon(group.stage)}
+                      </span>
+                      <div className="payment-node-main">
+                        <div className="payment-matrix-layout">
+                          <aside className="payment-node-side">
+                            <p className="section-kicker">{group.stage}</p>
+                            <p className="payment-side-date">{formatDate(group.date)}</p>
+                            <div className="payment-node-amount">{toCurrency(filteredRows.reduce((sum, row) => sum + (row.amount ?? 0), 0))}</div>
+                            <p className="small">
+                              {filteredRows.length} item(s)
+                              {filteredRows.some((row) => row.amount === null)
+                                ? ` • ${filteredRows.filter((row) => row.amount === null).length} pending`
+                                : ""}
+                            </p>
+                            <div className="payment-side-funding">
+                              <span className="funding-badge funding-cpf">
+                                CPF/OA possible: {toCurrency(getCpfEligibleKnownTotal(filteredRows))}
+                              </span>
+                              <span className="funding-badge funding-cash">
+                                Cash-only known: {toCurrency(getCashOnlyKnownTotal(filteredRows))}
+                              </span>
+                            </div>
+                          </aside>
+
+                          <div className="payment-matrix-wrap">
+                            <table className="payment-matrix">
+                              <thead>
+                                <tr>
+                                  <th>Item</th>
+                                  <th>Amount</th>
+                                  <th>Date</th>
+                                  <th>Funding</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {filteredRows.map((row, rowIndex) => {
+                                  const funding = getFundingBadge(row.paymentMode);
+
+                                  return (
+                                    <tr key={row.item + rowIndex} className="payment-row">
+                                      <td className="payment-item-cell">
+                                        <span className="payment-item-name">{row.item}</span>
+                                        <div className="payment-tooltip" role="tooltip">
+                                          <p>
+                                            <strong>Payment type:</strong> {row.paymentMode}
+                                          </p>
+                                          <p>
+                                            <strong>Details:</strong> {row.remarks}
+                                          </p>
+                                          <p>
+                                            <strong>Source:</strong> {renderSource(row.sourceKey)}
+                                          </p>
+                                        </div>
+                                      </td>
+                                      <td>{row.amount === null ? "Depends" : toCurrency(row.amount)}</td>
+                                      <td>{formatDate(row.date)}</td>
+                                      <td>
+                                        <span className={`funding-badge funding-${funding.tone}`}>
+                                          {funding.label}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
                           </div>
-                        </aside>
-
-                        <div className="payment-matrix-wrap">
-                          <table className="payment-matrix">
-                            <thead>
-                              <tr>
-                                <th>Item</th>
-                                <th>Amount</th>
-                                <th>Date</th>
-                                <th>Funding</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {group.rows.map((row, rowIndex) => {
-                                const funding = getFundingBadge(row.paymentMode);
-
-                                return (
-                                  <tr key={row.item + rowIndex} className="payment-row">
-                                    <td className="payment-item-cell">
-                                      <span className="payment-item-name">{row.item}</span>
-                                      <div className="payment-tooltip" role="tooltip">
-                                        <p>
-                                          <strong>Payment type:</strong> {row.paymentMode}
-                                        </p>
-                                        <p>
-                                          <strong>Details:</strong> {row.remarks}
-                                        </p>
-                                        <p>
-                                          <strong>Source:</strong> {renderSource(row.sourceKey)}
-                                        </p>
-                                      </div>
-                                    </td>
-                                    <td>{row.amount === null ? "Depends" : toCurrency(row.amount)}</td>
-                                    <td>{formatDate(row.date)}</td>
-                                    <td>
-                                      <span className={`funding-badge funding-${funding.tone}`}>
-                                        {funding.label}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
                         </div>
                       </div>
-                    </div>
-                  </article>
-                ))}
+                    </article>
+                  );
+                })}
               </div>
             </>
           ) : null}
@@ -1184,6 +1277,101 @@ function RangeField(props: {
         </div>
       </div>
     </label>
+  );
+}
+
+function WelcomeScreen(props: {
+  onSelectBtoProject: (projectId: string) => void;
+  onSkipToPlanExisting: () => void;
+}) {
+  const btoMonths = Object.keys(getBtoProjectsByLaunchMonth()).sort();
+  
+  return (
+    <div className="welcome-screen">
+      <div className="welcome-content">
+        <h2>Welcome to HDB Family Planner</h2>
+        <p className="welcome-intro">
+          Plan your HDB journey seamlessly. Explore BTO launches or create a custom plan.
+        </p>
+        
+        <div className="welcome-sections">
+          <section className="welcome-section">
+            <h3>🏗️ Explore BTO Projects</h3>
+            <p className="section-desc">Select a launch month and project to get started</p>
+            
+            <div className="bto-timeline">
+              {btoMonths.map((month) => {
+                const projects = getBtoProjectsByLaunchMonth()[month];
+                return (
+                  <div key={month} className="bto-month">
+                    <div className="month-header">{month}</div>
+                    <div className="projects-grid">
+                      {projects.map((project) => (
+                        <div key={project.id} className="project-card">
+                          <div className="project-name">{project.name}</div>
+                          <div className="project-meta">{project.location}</div>
+                          <div className="flat-types">
+                            {project.flatVariants.map((variant) => (
+                              <button
+                                key={variant.type}
+                                className="flat-type-btn"
+                                onClick={() => props.onSelectBtoProject(project.id)}
+                              >
+                                {variant.type}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+          
+          <section className="welcome-section">
+            <h3>📋 Or Create Your Custom Plan</h3>
+            <p className="section-desc">Build your own scenario with custom details</p>
+            <button className="welcome-cta" onClick={props.onSkipToPlanExisting}>
+              Start Custom Plan
+            </button>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SegmentFilter(props: {
+  activeFilter: SegmentFilter;
+  onChange: (filter: SegmentFilter) => void;
+}) {
+  const filters = [
+    { id: "all" as const, label: "All Payments" },
+    { id: "cpf-oa" as const, label: "CPF-OA Funded" },
+    { id: "cash-only" as const, label: "Cash Only" },
+    { id: "application" as const, label: "📝 Application" },
+    { id: "booking" as const, label: "🏠 Booking" },
+    { id: "agreement" as const, label: "📄 Agreement" },
+    { id: "key" as const, label: "🔑 Key Collection" },
+  ];
+  
+  return (
+    <div className="segment-filter">
+      <span className="filter-label">Filter by:</span>
+      <div className="filter-buttons">
+        {filters.map((filter) => (
+          <button
+            key={filter.id}
+            className={`filter-btn ${filter.id === props.activeFilter ? "is-active" : ""}`}
+            onClick={() => props.onChange(filter.id)}
+          >
+            {filter.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -1671,6 +1859,35 @@ function getInitialThemeMode(): ThemeMode {
   }
 
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function getBtoProjectsByLaunchMonth() {
+  const grouped: Record<string, (typeof POLICY.btoProjects)[number][]> = {};
+  for (const project of POLICY.btoProjects) {
+    if (!grouped[project.launchMonth]) {
+      grouped[project.launchMonth] = [];
+    }
+    grouped[project.launchMonth].push(project);
+  }
+  return grouped;
+}
+
+function getBtoProject(projectId: string) {
+  return POLICY.btoProjects.find((p) => p.id === projectId);
+}
+
+function applyBtoProjectToForm(form: PlannerFormValues, projectId: string, flatType: FlatType): PlannerFormValues {
+  const project = getBtoProject(projectId);
+  if (!project) return form;
+  
+  const variant = project.flatVariants.find((v) => v.type === flatType);
+  if (!variant) return form;
+  
+  return {
+    ...form,
+    flatType: variant.type as FlatType,
+    flatPrice: variant.basePrice.toString(),
+  };
 }
 
 export function createInitialFormValues(): PlannerFormValues {
