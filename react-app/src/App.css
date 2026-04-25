@@ -768,6 +768,218 @@ th {
   color: var(--brand);
 }
 
+.oa-forecast-card {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 1rem;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--brand-soft) 72%, transparent), transparent 36%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 88%, transparent), var(--surface-soft));
+}
+
+.oa-forecast-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+}
+
+.oa-forecast-stats {
+  display: grid;
+  gap: 0.45rem;
+  min-width: min(320px, 100%);
+}
+
+.oa-forecast-stats span,
+.oa-forecast-foot span {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.oa-forecast-stats strong,
+.oa-forecast-foot strong {
+  color: var(--ink);
+}
+
+.oa-story-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.oa-story-card {
+  display: grid;
+  gap: 0.32rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 0.85rem 0.9rem;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+}
+
+.oa-story-card strong {
+  font-size: 1.16rem;
+}
+
+.oa-story-card-success {
+  border-color: color-mix(in srgb, var(--success) 34%, var(--line));
+}
+
+.oa-story-card-warn {
+  border-color: color-mix(in srgb, var(--warn) 34%, var(--line));
+}
+
+.oa-story-label {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.oa-chart-wrap {
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
+}
+
+.oa-chart {
+  width: 100%;
+  min-width: 760px;
+  height: auto;
+}
+
+.oa-grid-line,
+.oa-axis-line,
+.oa-axis-tick,
+.oa-milestone-stem {
+  stroke: color-mix(in srgb, var(--line-strong) 74%, transparent);
+}
+
+.oa-grid-line {
+  stroke-dasharray: 5 7;
+}
+
+.oa-axis-line {
+  stroke-width: 1.4;
+}
+
+.oa-axis-tick {
+  stroke-width: 1.2;
+}
+
+.oa-axis-label {
+  fill: var(--muted);
+  font-size: 11px;
+}
+
+.oa-axis-label-key {
+  fill: var(--brand);
+  font-weight: 700;
+}
+
+.oa-area {
+  fill: color-mix(in srgb, var(--brand) 12%, transparent);
+}
+
+.oa-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.oa-line-projected {
+  stroke: var(--brand);
+}
+
+.oa-line-ideal {
+  stroke: var(--accent);
+  stroke-dasharray: 8 8;
+}
+
+.oa-milestone-stem {
+  stroke-dasharray: 3 5;
+}
+
+.oa-milestone-dot {
+  fill: var(--surface);
+  stroke: var(--brand);
+  stroke-width: 3;
+}
+
+.oa-milestone-label {
+  fill: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.oa-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem 1rem;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.legend-projected {
+  background: var(--brand);
+}
+
+.legend-ideal {
+  background: var(--accent);
+}
+
+.legend-milestone {
+  background: linear-gradient(180deg, var(--surface) 0%, var(--brand) 100%);
+  border: 2px solid var(--brand);
+}
+
+.oa-milestone-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.oa-milestone-card {
+  display: grid;
+  gap: 0.28rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 0.8rem;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+}
+
+.oa-milestone-date {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.oa-milestone-amount {
+  color: var(--warn);
+  font-weight: 700;
+}
+
+.oa-forecast-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem 1.2rem;
+  padding-top: 0.15rem;
+  border-top: 1px solid var(--line);
+}
 
 .payment-timeline {
   position: relative;
@@ -1073,6 +1285,15 @@ th {
     grid-template-columns: 1fr;
   }
 
+  .oa-forecast-head,
+  .oa-story-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .oa-forecast-head {
+    display: grid;
+  }
+
   .source-columns {
     columns: 1;
   }
@@ -1124,6 +1345,14 @@ th {
 
   .member-field-grid {
     grid-template-columns: 1fr;
+  }
+
+  .oa-story-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .oa-chart {
+    min-width: 680px;
   }
 
   .payment-line-main,

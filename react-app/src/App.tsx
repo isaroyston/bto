@@ -152,6 +152,37 @@ interface LoanRepaymentSummary {
   estimatedInterestTotal: number;
 }
 
+interface OaTimelinePoint {
+  month: number;
+  projectedBalance: number;
+  idealBalance: number;
+}
+
+interface OaMilestone {
+  month: number;
+  label: string;
+  amount: number;
+  date: Date;
+  stage: StageName;
+  balanceAfter: number;
+  fundingLabel: string;
+}
+
+interface OaTimelineModel {
+  points: OaTimelinePoint[];
+  milestones: OaMilestone[];
+  horizonMonths: number;
+  keyMonth: number;
+  firstRepaymentMonth: number;
+  projectedAtKey: number;
+  projectedAtEnd: number;
+  idealAtEnd: number;
+  totalMilestoneDeduction: number;
+  totalMonthlyDeduction: number;
+  monthlyOaDeduction: number;
+  headroomAtEnd: number;
+}
+
 interface StageFeasibility {
   stage: StageName;
   date: Date;
@@ -982,6 +1013,8 @@ function App() {
                 )}
               </article>
 
+              <OaForecastCard result={result} />
+
               <div className="payment-timeline" aria-label="Payment timeline">
                 {result.paymentGroups.map((group, groupIndex) => (
                   <article className={`payment-node payment-node-${toStageTone(group.stage)}`} key={group.stage + groupIndex}>
@@ -1000,17 +1033,13 @@ function App() {
                               ? ` • ${group.rows.filter((row) => row.amount === null).length} pending`
                               : ""}
                           </p>
-                          <div className="cpf-meter">
-                            <div className="cpf-meter-head">
-                              <span>CPF/OA-payable known</span>
-                              <strong>{toCurrency(getCpfEligibleKnownTotal(group.rows))}</strong>
-                            </div>
-                            <div className="cpf-meter-track" aria-hidden="true">
-                              <span
-                                className="cpf-meter-fill"
-                                style={{ width: `${getCpfEligibleRatio(group.rows)}%` }}
-                              ></span>
-                            </div>
+                          <div className="payment-side-funding">
+                            <span className="funding-badge funding-cpf">
+                              CPF/OA possible: {toCurrency(getCpfEligibleKnownTotal(group.rows))}
+                            </span>
+                            <span className="funding-badge funding-cash">
+                              Cash-only known: {toCurrency(getCashOnlyKnownTotal(group.rows))}
+                            </span>
                           </div>
                         </aside>
 
@@ -1156,6 +1185,393 @@ function RangeField(props: {
       </div>
     </label>
   );
+}
+
+function OaForecastCard(props: { result: CalculationResult }) {
+  const model = useMemo(() => buildOaTimelineModel(props.result), [props.result]);
+
+  const width = 860;
+  const height = 280;
+  const paddingLeft = 56;
+  const paddingBottom = 44;
+  const paddingTop = 22;
+  const innerWidth = width - paddingLeft - 26;
+  const innerHeight = height - paddingTop - paddingBottom;
+  const maxY = Math.max(
+    1000,
+    ...model.points.map((point) => Math.max(point.projectedBalance, point.idealBalance)),
+  );
+
+  const xOf = (month: number) =>
+    paddingLeft + (model.horizonMonths === 0 ? 0 : (month / model.horizonMonths) * innerWidth);
+  const yOf = (value: number) =>
+    paddingTop + innerHeight - (value / maxY) * innerHeight;
+
+  const projectedPath = buildLinePath(model.points, xOf, (point) => yOf(point.projectedBalance));
+  const idealPath = buildLinePath(model.points, xOf, (point) => yOf(point.idealBalance));
+  const projectedAreaPath = buildAreaPath(
+    model.points,
+    xOf,
+    (point) => yOf(point.projectedBalance),
+    height - paddingBottom,
+  );
+
+  const yTicks = [0.25, 0.5, 0.75, 1].map((ratio) => roundTo2(maxY * ratio));
+  const xTicks = [
+    { month: 0, label: "Start" },
+    { month: model.keyMonth, label: "Key collection" },
+    { month: model.firstRepaymentMonth, label: "Monthly OA usage starts" },
+    { month: model.horizonMonths, label: "Loan end" },
+  ].filter((tick, index, array) => array.findIndex((item) => item.month === tick.month) === index);
+
+  const endingTone = model.headroomAtEnd >= 0 ? "success" : "warn";
+
+  return (
+    <article className="oa-forecast-card">
+      <div className="oa-forecast-head">
+        <div>
+          <p className="section-kicker">OA Growth Outlook</p>
+          <h3>Whole OA timeline from now to loan completion</h3>
+          <p className="small">
+            OA keeps growing with monthly inflows, drops at each CPF-eligible housing milestone,
+            then transitions into the monthly repayment phase after key collection.
+          </p>
+        </div>
+        <div className="oa-forecast-stats">
+          <span>
+            At key collection: <strong>{toCurrency(model.projectedAtKey)}</strong>
+          </span>
+          <span>
+            Monthly OA used after keys: <strong>{toCurrency(model.monthlyOaDeduction)}/mo</strong>
+          </span>
+          <span>
+            End of horizon: <strong>{toCurrency(model.projectedAtEnd)}</strong>
+          </span>
+          <span>
+            Ideal end: <strong>{toCurrency(model.idealAtEnd)}</strong>
+          </span>
+        </div>
+      </div>
+
+      <div className="oa-story-grid">
+        <div className={`oa-story-card oa-story-card-${endingTone}`}>
+          <span className="oa-story-label">Projected OA at loan end</span>
+          <strong>{toCurrency(model.projectedAtEnd)}</strong>
+          <p className="small">
+            After milestone deductions plus monthly OA usage for housing.
+          </p>
+        </div>
+        <div className="oa-story-card">
+          <span className="oa-story-label">Housing draw on OA</span>
+          <strong>{toCurrency(model.totalMilestoneDeduction + model.totalMonthlyDeduction)}</strong>
+          <p className="small">
+            {toCurrency(model.totalMilestoneDeduction)} one-off milestones and{" "}
+            {toCurrency(model.totalMonthlyDeduction)} recurring monthly usage.
+          </p>
+        </div>
+        <div className="oa-story-card">
+          <span className="oa-story-label">Ideal-case difference</span>
+          <strong>{toCurrency(model.headroomAtEnd)}</strong>
+          <p className="small">
+            Gap between ideal OA growth and the housing-adjusted OA outcome.
+          </p>
+        </div>
+      </div>
+
+      <div className="oa-chart-wrap">
+        <svg viewBox={`0 0 ${width} ${height}`} className="oa-chart" role="img" aria-label="OA projection chart">
+          {yTicks.map((tick) => (
+            <g key={tick}>
+              <line
+                x1={paddingLeft}
+                x2={width - 12}
+                y1={yOf(tick)}
+                y2={yOf(tick)}
+                className="oa-grid-line"
+              />
+              <text x={6} y={yOf(tick) + 4} className="oa-axis-label">
+                {toCompactCurrency(tick)}
+              </text>
+            </g>
+          ))}
+
+          <path d={projectedAreaPath} className="oa-area" />
+          <path d={idealPath} className="oa-line oa-line-ideal" />
+          <path d={projectedPath} className="oa-line oa-line-projected" />
+
+          {model.milestones.map((milestone) => {
+            const point = model.points.find((item) => item.month === milestone.month);
+            if (!point) {
+              return null;
+            }
+
+            return (
+              <g key={`${milestone.label}-${milestone.month}`}>
+                <line
+                  x1={xOf(milestone.month)}
+                  x2={xOf(milestone.month)}
+                  y1={yOf(point.projectedBalance)}
+                  y2={height - paddingBottom + 8}
+                  className="oa-milestone-stem"
+                />
+                <circle
+                  cx={xOf(milestone.month)}
+                  cy={yOf(point.projectedBalance)}
+                  r={5}
+                  className="oa-milestone-dot"
+                />
+                <text
+                  x={xOf(milestone.month)}
+                  y={Math.max(18, yOf(point.projectedBalance) - 10)}
+                  textAnchor="middle"
+                  className="oa-milestone-label"
+                >
+                  {milestone.label}
+                </text>
+              </g>
+            );
+          })}
+
+          <line
+            x1={paddingLeft}
+            x2={width - 12}
+            y1={height - paddingBottom}
+            y2={height - paddingBottom}
+            className="oa-axis-line"
+          />
+
+          {xTicks.map((tick) => (
+            <g key={`${tick.label}-${tick.month}`}>
+              <line
+                x1={xOf(tick.month)}
+                x2={xOf(tick.month)}
+                y1={height - paddingBottom}
+                y2={height - paddingBottom + 8}
+                className="oa-axis-tick"
+              />
+              <text
+                x={xOf(tick.month)}
+                y={height - 12}
+                textAnchor={tick.month === 0 ? "start" : tick.month === model.horizonMonths ? "end" : "middle"}
+                className={
+                  tick.month === model.keyMonth ? "oa-axis-label oa-axis-label-key" : "oa-axis-label"
+                }
+              >
+                {tick.label}
+              </text>
+            </g>
+          ))}
+        </svg>
+      </div>
+
+      <div className="oa-legend">
+        <span className="legend-item">
+          <i className="legend-dot legend-projected"></i>
+          OA with housing payments
+        </span>
+        <span className="legend-item">
+          <i className="legend-dot legend-ideal"></i>
+          Ideal OA (no housing deductions)
+        </span>
+        <span className="legend-item">
+          <i className="legend-dot legend-milestone"></i>
+          Milestone deductions
+        </span>
+      </div>
+
+      <div className="oa-milestone-list">
+        {model.milestones.map((milestone) => (
+          <div className="oa-milestone-card" key={`${milestone.label}-${milestone.month}-card`}>
+            <span className="oa-milestone-date">{formatDate(milestone.date)}</span>
+            <strong>{milestone.label}</strong>
+            <span className="oa-milestone-amount">-{toCurrency(milestone.amount)}</span>
+            <span className="small">
+              OA after event: {toCurrency(milestone.balanceAfter)} · {milestone.fundingLabel}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="oa-forecast-foot">
+        <span>
+          Milestone deduction total: <strong>{toCurrency(model.totalMilestoneDeduction)}</strong>
+        </span>
+        <span>
+          Monthly deduction total: <strong>{toCurrency(model.totalMonthlyDeduction)}</strong>
+        </span>
+        <span>
+          First monthly OA usage:{" "}
+          <strong>{formatDate(addMonths(props.result.dates.keyDate, 1))}</strong>
+        </span>
+      </div>
+    </article>
+  );
+}
+
+function buildOaTimelineModel(result: CalculationResult): OaTimelineModel {
+  const keyMonth = Math.max(0, Math.ceil(monthsBetween(result.dates.applicationDate, result.dates.keyDate)));
+  const firstRepaymentMonth = result.loanRepaymentSummary.firstPaymentDate
+    ? Math.max(
+        keyMonth,
+        Math.ceil(monthsBetween(result.dates.applicationDate, result.loanRepaymentSummary.firstPaymentDate)),
+      )
+    : keyMonth;
+  const monthlyOaDeduction = roundTo2(
+    Math.min(result.loanRepaymentSummary.monthlyInstalment, result.household.oaMonthlyInflow),
+  );
+  const monthlyTermMonths = result.loanRepaymentSummary.hasLoan
+    ? result.monthlyLoanProjection.termMonths
+    : 0;
+  const horizonMonths = Math.max(
+    keyMonth + 1,
+    firstRepaymentMonth + monthlyTermMonths,
+    ...result.scheduleRows.map((row) =>
+      Math.ceil(monthsBetween(result.dates.applicationDate, row.date)),
+    ),
+  );
+
+  const cpfMilestones = result.scheduleRows
+    .filter((row) => row.amount !== null && isCpfOaPayable(row.paymentMode) === true)
+    .map((row) => ({
+      month: Math.ceil(monthsBetween(result.dates.applicationDate, row.date)),
+      label: shortenOaMilestoneLabel(row.item),
+      amount: row.amount ?? 0,
+      date: row.date,
+      stage: row.stage,
+      paymentMode: row.paymentMode,
+    }))
+    .sort((left, right) => left.month - right.month || left.amount - right.amount);
+
+  const milestoneMap = new Map<number, typeof cpfMilestones>();
+  cpfMilestones.forEach((milestone) => {
+    const current = milestoneMap.get(milestone.month) ?? [];
+    current.push(milestone);
+    milestoneMap.set(milestone.month, current);
+  });
+
+  const points: OaTimelinePoint[] = [];
+  const milestones: OaMilestone[] = [];
+  let idealBalance = result.household.currentCpfOaBalance;
+  let projectedBalance = result.household.currentCpfOaBalance;
+
+  for (let month = 0; month <= horizonMonths; month += 1) {
+    if (month > 0) {
+      idealBalance += result.household.oaMonthlyInflow;
+      projectedBalance += result.household.oaMonthlyInflow;
+    }
+
+    const events = milestoneMap.get(month) ?? [];
+    events.forEach((event) => {
+      projectedBalance = Math.max(0, projectedBalance - event.amount);
+      milestones.push({
+        month,
+        label: event.label,
+        amount: event.amount,
+        date: event.date,
+        stage: event.stage,
+        balanceAfter: roundTo2(projectedBalance),
+        fundingLabel: event.paymentMode,
+      });
+    });
+
+    if (month >= firstRepaymentMonth && month < firstRepaymentMonth + monthlyTermMonths) {
+      projectedBalance = Math.max(0, projectedBalance - monthlyOaDeduction);
+    }
+
+    points.push({
+      month,
+      projectedBalance: roundTo2(projectedBalance),
+      idealBalance: roundTo2(idealBalance),
+    });
+  }
+
+  const keyPoint = points.find((point) => point.month === keyMonth) ?? points[points.length - 1];
+  const endPoint = points[points.length - 1];
+  const totalMilestoneDeduction = roundTo2(
+    milestones.reduce((sum, milestone) => sum + milestone.amount, 0),
+  );
+  const totalMonthlyDeduction = roundTo2(monthlyOaDeduction * monthlyTermMonths);
+
+  return {
+    points,
+    milestones,
+    horizonMonths,
+    keyMonth,
+    firstRepaymentMonth,
+    projectedAtKey: keyPoint?.projectedBalance ?? 0,
+    projectedAtEnd: endPoint?.projectedBalance ?? 0,
+    idealAtEnd: endPoint?.idealBalance ?? 0,
+    totalMilestoneDeduction,
+    totalMonthlyDeduction,
+    monthlyOaDeduction,
+    headroomAtEnd: roundTo2((endPoint?.idealBalance ?? 0) - (endPoint?.projectedBalance ?? 0)),
+  };
+}
+
+function buildLinePath<T>(
+  points: T[],
+  xOf: (pointX: number) => number,
+  yOf: (point: T) => number,
+): string {
+  if (points.length === 0) {
+    return "";
+  }
+
+  return points
+    .map((point, index) => {
+      const x = xOf((point as OaTimelinePoint).month);
+      const y = yOf(point);
+      return `${index === 0 ? "M" : "L"} ${x} ${y}`;
+    })
+    .join(" ");
+}
+
+function buildAreaPath<T>(
+  points: T[],
+  xOf: (pointX: number) => number,
+  yOf: (point: T) => number,
+  baselineY: number,
+): string {
+  if (points.length === 0) {
+    return "";
+  }
+
+  const linePath = buildLinePath(points, xOf, yOf);
+  const firstPoint = points[0] as OaTimelinePoint;
+  const lastPoint = points[points.length - 1] as OaTimelinePoint;
+
+  return `${linePath} L ${xOf(lastPoint.month)} ${baselineY} L ${xOf(firstPoint.month)} ${baselineY} Z`;
+}
+
+function toCompactCurrency(value: number): string {
+  return new Intl.NumberFormat("en-SG", {
+    notation: "compact",
+    maximumFractionDigits: value >= 100000 ? 1 : 0,
+  }).format(value);
+}
+
+function shortenOaMilestoneLabel(item: string): string {
+  if (item.toLowerCase().includes("option fee")) {
+    return "Downpayment";
+  }
+
+  if (item.toLowerCase().includes("first instalment")) {
+    return "Signing payment";
+  }
+
+  if (item.toLowerCase().includes("second instalment")) {
+    return "Key payment";
+  }
+
+  if (item.toLowerCase().includes("legal")) {
+    return "Legal fee";
+  }
+
+  if (item.toLowerCase().includes("stamp")) {
+    return "Stamp duty";
+  }
+
+  return item;
 }
 
 function SummaryStat(props: {
@@ -1319,13 +1735,16 @@ function getCpfEligibleKnownTotal(rows: ScheduleRow[]): number {
   );
 }
 
-function getCpfEligibleRatio(rows: ScheduleRow[]): number {
-  const knownTotal = rows.reduce((sum, row) => sum + (row.amount ?? 0), 0);
-  if (knownTotal <= 0) {
-    return 0;
-  }
+function getCashOnlyKnownTotal(rows: ScheduleRow[]): number {
+  return roundTo2(
+    rows.reduce((sum, row) => {
+      if (row.amount === null) {
+        return sum;
+      }
 
-  return (getCpfEligibleKnownTotal(rows) / knownTotal) * 100;
+      return isCpfOaPayable(row.paymentMode) === false ? sum + row.amount : sum;
+    }, 0),
+  );
 }
 
 function getFundingBadge(paymentMode: string): {
