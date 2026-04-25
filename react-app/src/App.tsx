@@ -1190,40 +1190,6 @@ function RangeField(props: {
 function OaForecastCard(props: { result: CalculationResult }) {
   const model = useMemo(() => buildOaTimelineModel(props.result), [props.result]);
 
-  const width = 860;
-  const height = 280;
-  const paddingLeft = 56;
-  const paddingBottom = 44;
-  const paddingTop = 22;
-  const innerWidth = width - paddingLeft - 26;
-  const innerHeight = height - paddingTop - paddingBottom;
-  const maxY = Math.max(
-    1000,
-    ...model.points.map((point) => Math.max(point.projectedBalance, point.idealBalance)),
-  );
-
-  const xOf = (month: number) =>
-    paddingLeft + (model.horizonMonths === 0 ? 0 : (month / model.horizonMonths) * innerWidth);
-  const yOf = (value: number) =>
-    paddingTop + innerHeight - (value / maxY) * innerHeight;
-
-  const projectedPath = buildLinePath(model.points, xOf, (point) => yOf(point.projectedBalance));
-  const idealPath = buildLinePath(model.points, xOf, (point) => yOf(point.idealBalance));
-  const projectedAreaPath = buildAreaPath(
-    model.points,
-    xOf,
-    (point) => yOf(point.projectedBalance),
-    height - paddingBottom,
-  );
-
-  const yTicks = [0.25, 0.5, 0.75, 1].map((ratio) => roundTo2(maxY * ratio));
-  const xTicks = [
-    { month: 0, label: "Start" },
-    { month: model.keyMonth, label: "Key collection" },
-    { month: model.firstRepaymentMonth, label: "Monthly OA usage starts" },
-    { month: model.horizonMonths, label: "Loan end" },
-  ].filter((tick, index, array) => array.findIndex((item) => item.month === tick.month) === index);
-
   const endingTone = model.headroomAtEnd >= 0 ? "success" : "warn";
 
   return (
@@ -1278,105 +1244,28 @@ function OaForecastCard(props: { result: CalculationResult }) {
         </div>
       </div>
 
-      <div className="oa-chart-wrap">
-        <svg viewBox={`0 0 ${width} ${height}`} className="oa-chart" role="img" aria-label="OA projection chart">
-          {yTicks.map((tick) => (
-            <g key={tick}>
-              <line
-                x1={paddingLeft}
-                x2={width - 12}
-                y1={yOf(tick)}
-                y2={yOf(tick)}
-                className="oa-grid-line"
-              />
-              <text x={6} y={yOf(tick) + 4} className="oa-axis-label">
-                {toCompactCurrency(tick)}
-              </text>
-            </g>
-          ))}
-
-          <path d={projectedAreaPath} className="oa-area" />
-          <path d={idealPath} className="oa-line oa-line-ideal" />
-          <path d={projectedPath} className="oa-line oa-line-projected" />
-
-          {model.milestones.map((milestone) => {
-            const point = model.points.find((item) => item.month === milestone.month);
-            if (!point) {
-              return null;
-            }
-
-            return (
-              <g key={`${milestone.label}-${milestone.month}`}>
-                <line
-                  x1={xOf(milestone.month)}
-                  x2={xOf(milestone.month)}
-                  y1={yOf(point.projectedBalance)}
-                  y2={height - paddingBottom + 8}
-                  className="oa-milestone-stem"
-                />
-                <circle
-                  cx={xOf(milestone.month)}
-                  cy={yOf(point.projectedBalance)}
-                  r={5}
-                  className="oa-milestone-dot"
-                />
-                <text
-                  x={xOf(milestone.month)}
-                  y={Math.max(18, yOf(point.projectedBalance) - 10)}
-                  textAnchor="middle"
-                  className="oa-milestone-label"
-                >
-                  {milestone.label}
-                </text>
-              </g>
-            );
-          })}
-
-          <line
-            x1={paddingLeft}
-            x2={width - 12}
-            y1={height - paddingBottom}
-            y2={height - paddingBottom}
-            className="oa-axis-line"
-          />
-
-          {xTicks.map((tick) => (
-            <g key={`${tick.label}-${tick.month}`}>
-              <line
-                x1={xOf(tick.month)}
-                x2={xOf(tick.month)}
-                y1={height - paddingBottom}
-                y2={height - paddingBottom + 8}
-                className="oa-axis-tick"
-              />
-              <text
-                x={xOf(tick.month)}
-                y={height - 12}
-                textAnchor={tick.month === 0 ? "start" : tick.month === model.horizonMonths ? "end" : "middle"}
-                className={
-                  tick.month === model.keyMonth ? "oa-axis-label oa-axis-label-key" : "oa-axis-label"
-                }
-              >
-                {tick.label}
-              </text>
-            </g>
-          ))}
-        </svg>
-      </div>
-
-      <div className="oa-legend">
-        <span className="legend-item">
-          <i className="legend-dot legend-projected"></i>
-          OA with housing payments
-        </span>
-        <span className="legend-item">
-          <i className="legend-dot legend-ideal"></i>
-          Ideal OA (no housing deductions)
-        </span>
-        <span className="legend-item">
-          <i className="legend-dot legend-milestone"></i>
-          Milestone deductions
-        </span>
+      <div className="oa-plan-grid">
+        <div className="oa-plan-card">
+          <p className="section-kicker">Monthly OA Flow After Keys</p>
+          <h4>{toCurrency(model.monthlyOaDeduction)} / month</h4>
+          <p className="small">
+            Starts around <strong>{formatDate(addMonths(props.result.dates.keyDate, 1))}</strong> and
+            continues for <strong>{props.result.monthlyLoanProjection.termMonths} months</strong>.
+          </p>
+        </div>
+        <div className="oa-plan-card">
+          <p className="section-kicker">Practical Takeaway</p>
+          <h4>
+            {model.headroomAtEnd >= 0
+              ? "OA trajectory stays positive"
+              : "OA may tighten over the full term"}
+          </h4>
+          <p className="small">
+            {model.headroomAtEnd >= 0
+              ? "Current assumptions keep OA healthy through completion."
+              : "Consider lower loan burden, higher OA inflow, or shorter repayment horizon."}
+          </p>
+        </div>
       </div>
 
       <div className="oa-milestone-list">
@@ -1506,48 +1395,6 @@ function buildOaTimelineModel(result: CalculationResult): OaTimelineModel {
     monthlyOaDeduction,
     headroomAtEnd: roundTo2((endPoint?.idealBalance ?? 0) - (endPoint?.projectedBalance ?? 0)),
   };
-}
-
-function buildLinePath<T>(
-  points: T[],
-  xOf: (pointX: number) => number,
-  yOf: (point: T) => number,
-): string {
-  if (points.length === 0) {
-    return "";
-  }
-
-  return points
-    .map((point, index) => {
-      const x = xOf((point as OaTimelinePoint).month);
-      const y = yOf(point);
-      return `${index === 0 ? "M" : "L"} ${x} ${y}`;
-    })
-    .join(" ");
-}
-
-function buildAreaPath<T>(
-  points: T[],
-  xOf: (pointX: number) => number,
-  yOf: (point: T) => number,
-  baselineY: number,
-): string {
-  if (points.length === 0) {
-    return "";
-  }
-
-  const linePath = buildLinePath(points, xOf, yOf);
-  const firstPoint = points[0] as OaTimelinePoint;
-  const lastPoint = points[points.length - 1] as OaTimelinePoint;
-
-  return `${linePath} L ${xOf(lastPoint.month)} ${baselineY} L ${xOf(firstPoint.month)} ${baselineY} Z`;
-}
-
-function toCompactCurrency(value: number): string {
-  return new Intl.NumberFormat("en-SG", {
-    notation: "compact",
-    maximumFractionDigits: value >= 100000 ? 1 : 0,
-  }).format(value);
 }
 
 function shortenOaMilestoneLabel(item: string): string {

@@ -838,114 +838,24 @@ th {
   text-transform: uppercase;
 }
 
-.oa-chart-wrap {
-  overflow-x: auto;
-  padding-bottom: 0.2rem;
+.oa-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
 }
 
-.oa-chart {
-  width: 100%;
-  min-width: 760px;
-  height: auto;
+.oa-plan-card {
+  display: grid;
+  gap: 0.3rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 0.8rem;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
 }
 
-.oa-grid-line,
-.oa-axis-line,
-.oa-axis-tick,
-.oa-milestone-stem {
-  stroke: color-mix(in srgb, var(--line-strong) 74%, transparent);
-}
-
-.oa-grid-line {
-  stroke-dasharray: 5 7;
-}
-
-.oa-axis-line {
-  stroke-width: 1.4;
-}
-
-.oa-axis-tick {
-  stroke-width: 1.2;
-}
-
-.oa-axis-label {
-  fill: var(--muted);
-  font-size: 11px;
-}
-
-.oa-axis-label-key {
-  fill: var(--brand);
-  font-weight: 700;
-}
-
-.oa-area {
-  fill: color-mix(in srgb, var(--brand) 12%, transparent);
-}
-
-.oa-line {
-  fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 3;
-}
-
-.oa-line-projected {
-  stroke: var(--brand);
-}
-
-.oa-line-ideal {
-  stroke: var(--accent);
-  stroke-dasharray: 8 8;
-}
-
-.oa-milestone-stem {
-  stroke-dasharray: 3 5;
-}
-
-.oa-milestone-dot {
-  fill: var(--surface);
-  stroke: var(--brand);
-  stroke-width: 3;
-}
-
-.oa-milestone-label {
-  fill: var(--ink);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.oa-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.8rem 1rem;
-}
-
-.legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  color: var(--muted);
-  font-size: 0.86rem;
-}
-
-.legend-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  background: var(--line);
-}
-
-.legend-projected {
-  background: var(--brand);
-}
-
-.legend-ideal {
-  background: var(--accent);
-}
-
-.legend-milestone {
-  background: linear-gradient(180deg, var(--surface) 0%, var(--brand) 100%);
-  border: 2px solid var(--brand);
+.oa-plan-card h4 {
+  margin: 0;
+  font-size: 1.04rem;
 }
 
 .oa-milestone-list {
@@ -1351,8 +1261,8 @@ th {
     grid-template-columns: 1fr;
   }
 
-  .oa-chart {
-    min-width: 680px;
+  .oa-plan-grid {
+    grid-template-columns: 1fr;
   }
 
   .payment-line-main,
