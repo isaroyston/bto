@@ -933,6 +933,7 @@ th {
   border-radius: 16px;
   padding: 0.66rem 0.72rem;
   background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 84%, transparent), var(--surface-soft));
+  overflow: visible;
   transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
@@ -1004,7 +1005,10 @@ th {
 }
 
 .payment-matrix-wrap {
+  position: relative;
+  isolation: isolate;
   overflow-x: auto;
+  overflow-y: visible;
 }
 
 .payment-matrix {
@@ -1019,6 +1023,7 @@ th {
   border-bottom: 1px solid var(--line);
   padding: 0.44rem 0.28rem;
   vertical-align: top;
+  overflow: visible;
 }
 
 .payment-matrix th {
@@ -1089,8 +1094,9 @@ th {
 .payment-tooltip {
   position: absolute;
   left: 0;
-  bottom: calc(100% + 8px);
-  width: min(320px, 85vw);
+  top: calc(100% + 8px);
+  bottom: auto;
+  width: min(360px, 86vw);
   padding: 0.56rem 0.64rem;
   border-radius: 12px;
   background: color-mix(in srgb, var(--surface) 80%, #000 20%);
@@ -1101,7 +1107,7 @@ th {
   transform: translateY(6px);
   pointer-events: none;
   transition: opacity 140ms ease, transform 140ms ease;
-  z-index: 20;
+  z-index: 40;
 }
 
 .payment-tooltip p {
@@ -1113,10 +1119,12 @@ th {
   margin-top: 0.35rem;
 }
 
-.payment-row:hover .payment-tooltip,
-.payment-row:focus-within .payment-tooltip {
+.payment-item-cell:hover .payment-tooltip,
+.payment-item-cell:focus-within .payment-tooltip,
+.payment-tooltip:hover {
   opacity: 1;
   transform: translateY(0);
+  pointer-events: auto;
 }
 
 .sources-panel {
