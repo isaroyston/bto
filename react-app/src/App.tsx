@@ -230,7 +230,7 @@ function App() {
   const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialThemeMode);
   const lastScrollYRef = useRef(0);
   const tabPanelContentRef = useRef<HTMLDivElement | null>(null);
-  const [tabStageHeight, setTabStageHeight] = useState<number>(640);
+  const [tabStageMinHeight, setTabStageMinHeight] = useState<number>(720);
 
   const result = useMemo(() => calculatePlan(formValues), [formValues]);
   const policyReviewMeta = useMemo(
@@ -254,7 +254,8 @@ function App() {
 
     const updateHeight = () => {
       const nextHeight = Math.max(620, Math.ceil(content.getBoundingClientRect().height));
-      setTabStageHeight(nextHeight);
+      // Keep the stage at the largest encountered tab height to avoid upward pops.
+      setTabStageMinHeight((prev) => Math.max(prev, nextHeight));
     };
 
     updateHeight();
@@ -420,7 +421,7 @@ function App() {
             ))}
           </div>
 
-          <div className="tab-stage" style={{ height: tabStageHeight }}>
+          <div className="tab-stage" style={{ minHeight: tabStageMinHeight }}>
             <div className="tab-panel" ref={tabPanelContentRef}>
           {activeTab === "profile" ? (
             <>
