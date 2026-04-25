@@ -18,7 +18,7 @@ type StageName =
   | "Sign Agreement for Lease"
   | "Key Collection";
 type SourceKey = keyof typeof POLICY.sources;
-type TabKey = "profile" | "property-loan" | "scheme-grants" | "timeline-payments";
+type TabKey = "profile" | "property-loan" | "scheme-grants" | "timeline-payments" | "sources";
 type ThemeMode = "light" | "dark";
 type PersonRole = "applicant" | "co-applicant" | "essential-occupier" | "household-member";
 type Citizenship = "singapore-citizen" | "permanent-resident" | "other";
@@ -221,6 +221,7 @@ const TABS: Array<{ key: TabKey; label: string }> = [
   { key: "property-loan", label: "Flat & Loan" },
   { key: "scheme-grants", label: "Scheme & Grant" },
   { key: "timeline-payments", label: "Payments" },
+  { key: "sources", label: "Sources" },
 ];
 
 function App() {
@@ -232,6 +233,10 @@ function App() {
   const policyReviewMeta = useMemo(
     () => getPolicyReviewMeta(POLICY.lastVerified, POLICY.updateCadenceDays),
     [],
+  );
+  const ehgIncomeRatioPercent = Math.min(
+    100,
+    (result.ehgAssessment.averageMonthlyIncome / EHG_FAMILIES_POLICY_META.maxIncomeInclusive) * 100,
   );
 
   useEffect(() => {
@@ -660,44 +665,43 @@ function App() {
                       />
                     </Field>
 
-                    <Field label="Completion timeline from booking (months)">
-                      <input
-                        type="number"
-                        name="completionMonths"
-                        min="1"
-                        step="1"
-                        value={formValues.completionMonths}
-                        onChange={handlePlannerFieldChange}
-                      />
-                    </Field>
+                    <RangeField
+                      label="Completion timeline from booking"
+                      name="completionMonths"
+                      min={24}
+                      max={72}
+                      step={1}
+                      value={formValues.completionMonths}
+                      suffix="months"
+                      onChange={handlePlannerFieldChange}
+                    />
                   </div>
                 </article>
 
                 <article className="subpanel">
                   <p className="section-kicker">Loan assumptions</p>
                   <div className="field-grid">
-                    <Field label="Annual interest rate (%)">
-                      <input
-                        type="number"
-                        name="annualInterestRate"
-                        min="0"
-                        step="0.01"
-                        value={formValues.annualInterestRate}
-                        onChange={handlePlannerFieldChange}
-                      />
-                    </Field>
+                    <RangeField
+                      label="Annual interest rate"
+                      name="annualInterestRate"
+                      min={0}
+                      max={6}
+                      step={0.05}
+                      value={formValues.annualInterestRate}
+                      suffix="%"
+                      onChange={handlePlannerFieldChange}
+                    />
 
-                    <Field label="Loan tenure (years)">
-                      <input
-                        type="number"
-                        name="loanTenureYears"
-                        min="1"
-                        max="35"
-                        step="1"
-                        value={formValues.loanTenureYears}
-                        onChange={handlePlannerFieldChange}
-                      />
-                    </Field>
+                    <RangeField
+                      label="Loan tenure"
+                      name="loanTenureYears"
+                      min={5}
+                      max={35}
+                      step={1}
+                      value={formValues.loanTenureYears}
+                      suffix="years"
+                      onChange={handlePlannerFieldChange}
+                    />
 
                     <Field label="Planned monthly cash set-aside (SGD)">
                       <input
@@ -770,19 +774,56 @@ function App() {
                     </select>
                   </Field>
 
-                  <Field label="Loan-to-value ratio (%)">
-                    <input
-                      type="number"
-                      name="ltvRatio"
-                      min="0"
-                      max="90"
-                      step="1"
-                      value={formValues.ltvRatio}
-                      onChange={handlePlannerFieldChange}
-                    />
-                  </Field>
+                  <RangeField
+                    label="Loan-to-value ratio"
+                    name="ltvRatio"
+                    min={0}
+                    max={90}
+                    step={1}
+                    value={formValues.ltvRatio}
+                    suffix="%"
+                    onChange={handlePlannerFieldChange}
+                  />
                 </div>
               </div>
+
+              <article className="grant-hero">
+                <div className="grant-hero-amount">
+                  <p className="section-kicker">Line One: Grant Snapshot</p>
+                  <strong>{toCurrency(result.ehgGrant)}</strong>
+                  <p className="small">{result.ehgAssessment.bandLabel}</p>
+                  <span
+                    className={
+                      result.ehgAssessment.eligible
+                        ? "grant-status grant-status-pass"
+                        : "grant-status grant-status-fail"
+                    }
+                  >
+                    {result.ehgAssessment.eligible
+                      ? "Eligible based on current profile"
+                      : "Eligibility gaps detected"}
+                  </span>
+                </div>
+                <div className="grant-hero-meter">
+                  <div className="grant-hero-meter-head">
+                    <strong>Eligibility vs current status</strong>
+                    <span>
+                      {toCurrency(result.ehgAssessment.averageMonthlyIncome)} of{" "}
+                      {toCurrency(EHG_FAMILIES_POLICY_META.maxIncomeInclusive)}
+                    </span>
+                  </div>
+                  <div className="grant-meter-track" aria-hidden="true">
+                    <span
+                      className="grant-meter-fill"
+                      style={{ width: `${ehgIncomeRatioPercent}%` }}
+                    ></span>
+                  </div>
+                  <p className="small muted-line">
+                    Lower income bands qualify for higher grant amounts. Keep this line
+                    comfortably within the policy ceiling.
+                  </p>
+                </div>
+              </article>
 
               <div className="summary-strip">
                 <SummaryStat
@@ -809,12 +850,12 @@ function App() {
                 <ComparisonTable
                   title="Families EHG requirement vs current value"
                   intro={`Grounded in ${EHG_FAMILIES_POLICY_META.sourceDocument} (${EHG_FAMILIES_POLICY_META.sourceReference}).`}
-                  rows={result.ehgRequirementRows}
+                  rows={result.ehgRequirementRows.slice(0, 6)}
                 />
                 <ComparisonTable
                   title="Scheme rule vs current amount"
                   intro="This makes the selected financing path and payment rule more concrete."
-                  rows={result.schemeRuleRows}
+                  rows={result.schemeRuleRows.slice(0, 6)}
                 />
               </div>
             </div>
@@ -903,67 +944,75 @@ function App() {
                 )}
               </article>
 
-              <div className="payment-groups">
+              <div className="payment-timeline" aria-label="Payment timeline">
                 {result.paymentGroups.map((group, groupIndex) => (
-                  <article className="payment-group" key={group.stage + groupIndex}>
-                    <div className="payment-group-head">
-                      <div>
+                  <article
+                    className={`payment-node payment-node-${toStageTone(group.stage)}`}
+                    key={group.stage + groupIndex}
+                  >
+                    <span className="payment-node-dot" aria-hidden="true">
+                      {toStageIcon(group.stage)}
+                    </span>
+                    <div className="payment-node-main">
+                      <div className="payment-node-head">
                         <p className="section-kicker">{group.stage}</p>
-                        <h3>{formatDate(group.date)}</h3>
-                        <p className="small">
-                          {group.rows.length} line item(s)
-                          {group.rows.some((row) => row.amount === null)
-                            ? ` | ${group.rows.filter((row) => row.amount === null).length} pending amount(s)`
-                            : ""}
-                        </p>
+                        <span>{formatDate(group.date)}</span>
                       </div>
-                    </div>
+                      <div className="payment-node-amount">{toCurrency(group.knownTotal)}</div>
+                      <p className="small">
+                        {group.rows.length} item(s)
+                        {group.rows.some((row) => row.amount === null)
+                          ? ` • ${group.rows.filter((row) => row.amount === null).length} pending`
+                          : ""}
+                      </p>
 
-                    <ul className="payment-line-list">
-                      {group.rows.map((row, rowIndex) => (
-                        <li className="payment-line" key={row.item + rowIndex}>
-                          <div className="payment-line-main">
-                            <strong>{row.item}</strong>
-                            <strong>
+                      <ul className="payment-chip-list">
+                        {group.rows.map((row, rowIndex) => (
+                          <li className="payment-chip" key={row.item + rowIndex}>
+                            <span className="payment-chip-label">{row.item}</span>
+                            <span className="payment-chip-value">
                               {row.amount === null ? "Depends" : toCurrency(row.amount)}
-                            </strong>
-                          </div>
-                          <div className="payment-line-meta">
-                            <span>{row.paymentMode}</span>
-                            <span>{row.remarks}</span>
-                            <span>{renderSource(row.sourceKey)}</span>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-
-                    <div className="payment-group-footer">
-                      <div className="payment-total-block">
-                        <span className="small">Known subtotal for this stage date</span>
-                        <strong>{toCurrency(group.knownTotal)}</strong>
-                      </div>
+                            </span>
+                            <div className="payment-tooltip" role="tooltip">
+                              <p>
+                                <strong>Payment type:</strong> {row.paymentMode}
+                              </p>
+                              <p>
+                                <strong>Details:</strong> {row.remarks}
+                              </p>
+                              <p>
+                                <strong>Source:</strong> {renderSource(row.sourceKey)}
+                              </p>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   </article>
                 ))}
               </div>
             </div>
           ) : null}
-        </section>
 
-        <section className="panel footer-panel">
-          <div className="section-header">
-            <div>
-              <h2>Sources</h2>
-              <p className="small">
-                These are the policy and process references behind the planner outputs.
-              </p>
+          {activeTab === "sources" ? (
+            <div className="tab-panel">
+              <div className="section-header">
+                <div>
+                  <h2>Sources</h2>
+                  <p className="small">
+                    Small, dedicated reference tab for policy and process links.
+                  </p>
+                </div>
+              </div>
+              <article className="sources-panel">
+                <ul className="source-list source-columns">
+                  {Object.entries(POLICY.sources).map(([key]) => (
+                    <li key={key}>{renderSource(key as SourceKey)}</li>
+                  ))}
+                </ul>
+              </article>
             </div>
-          </div>
-          <ul className="source-list source-columns">
-            {Object.entries(POLICY.sources).map(([key]) => (
-              <li key={key}>{renderSource(key as SourceKey)}</li>
-            ))}
-          </ul>
+          ) : null}
         </section>
       </main>
     </div>
@@ -992,6 +1041,46 @@ function ToggleField(props: {
         onChange={(event) => props.onChange(event.target.checked)}
       />
       <span>{props.label}</span>
+    </label>
+  );
+}
+
+function RangeField(props: {
+  label: string;
+  name: string;
+  value: string;
+  min: number;
+  max: number;
+  step: number;
+  suffix: string;
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <label className="field">
+      <span className="field-title">{props.label}</span>
+      <div className="range-field">
+        <input
+          type="range"
+          name={props.name}
+          min={props.min}
+          max={props.max}
+          step={props.step}
+          value={props.value}
+          onChange={props.onChange}
+        />
+        <div className="range-meta">
+          <input
+            type="number"
+            name={props.name}
+            min={props.min}
+            max={props.max}
+            step={props.step}
+            value={props.value}
+            onChange={props.onChange}
+          />
+          <span>{props.suffix}</span>
+        </div>
+      </div>
     </label>
   );
 }
@@ -1097,6 +1186,38 @@ function renderSource(sourceKey: SourceKey) {
   }
 
   return <span>{source.label}</span>;
+}
+
+function toStageTone(stage: StageName): "application" | "booking" | "agreement" | "key" {
+  if (stage === "Application") {
+    return "application";
+  }
+
+  if (stage === "Flat Booking") {
+    return "booking";
+  }
+
+  if (stage === "Sign Agreement for Lease") {
+    return "agreement";
+  }
+
+  return "key";
+}
+
+function toStageIcon(stage: StageName): string {
+  if (stage === "Application") {
+    return "📝";
+  }
+
+  if (stage === "Flat Booking") {
+    return "🏠";
+  }
+
+  if (stage === "Sign Agreement for Lease") {
+    return "📄";
+  }
+
+  return "🔑";
 }
 
 function formatRoleLabel(role: PersonRole): string {
