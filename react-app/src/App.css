@@ -1099,10 +1099,11 @@ th {
   width: min(360px, 86vw);
   padding: 0.56rem 0.64rem;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--surface) 80%, #000 20%);
+  background: var(--surface);
   color: var(--ink);
-  border: 1px solid var(--line);
-  box-shadow: 0 14px 24px rgba(0, 0, 0, 0.16);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.22);
+  backdrop-filter: none;
   opacity: 0;
   visibility: hidden;
   transform: translateY(6px);
