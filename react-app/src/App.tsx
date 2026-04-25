@@ -1,5 +1,5 @@
 import type { ChangeEvent, ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   EHG_FAMILIES_POLICY_META,
   getCpfDefaultsForAge,
@@ -228,6 +228,9 @@ function App() {
   const [formValues, setFormValues] = useState<PlannerFormValues>(createInitialFormValues);
   const [activeTab, setActiveTab] = useState<TabKey>("profile");
   const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialThemeMode);
+  const lastScrollYRef = useRef(0);
+  const tabPanelContentRef = useRef<HTMLDivElement | null>(null);
+  const [tabStageHeight, setTabStageHeight] = useState<number>(640);
 
   const result = useMemo(() => calculatePlan(formValues), [formValues]);
   const policyReviewMeta = useMemo(
@@ -242,6 +245,24 @@ function App() {
   useEffect(() => {
     window.localStorage.setItem("hdb-planner-theme", themeMode);
   }, [themeMode]);
+
+  useLayoutEffect(() => {
+    const content = tabPanelContentRef.current;
+    if (!content) {
+      return;
+    }
+
+    const updateHeight = () => {
+      const nextHeight = Math.max(620, Math.ceil(content.getBoundingClientRect().height));
+      setTabStageHeight(nextHeight);
+    };
+
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(content);
+
+    return () => observer.disconnect();
+  }, [activeTab, formValues, themeMode]);
 
   const handlePlannerFieldChange = (
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -291,6 +312,20 @@ function App() {
     link.download = "hdb-payment-plan.ics";
     link.click();
     URL.revokeObjectURL(link.href);
+  };
+
+  const handleTabChange = (tabKey: TabKey) => {
+    if (tabKey === activeTab) {
+      return;
+    }
+
+    // Preserve the current viewport position when tab content heights differ.
+    lastScrollYRef.current = window.scrollY;
+    setActiveTab(tabKey);
+
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: lastScrollYRef.current, behavior: "auto" });
+    });
   };
 
   return (
@@ -378,15 +413,17 @@ function App() {
                 role="tab"
                 className={tab.key === activeTab ? "tab is-active" : "tab"}
                 aria-selected={tab.key === activeTab}
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => handleTabChange(tab.key)}
               >
                 {tab.label}
               </button>
             ))}
           </div>
 
+          <div className="tab-stage" style={{ height: tabStageHeight }}>
+            <div className="tab-panel" ref={tabPanelContentRef}>
           {activeTab === "profile" ? (
-            <div className="tab-panel">
+            <>
               <div className="section-header">
                 <div>
                   <h2>Household Profile</h2>
@@ -611,11 +648,11 @@ function App() {
                   );
                 })}
               </div>
-            </div>
+            </>
           ) : null}
 
           {activeTab === "property-loan" ? (
-            <div className="tab-panel">
+            <>
               <div className="section-header">
                 <div>
                   <h2>Flat & Loan</h2>
@@ -731,11 +768,11 @@ function App() {
                   value={`${result.monthlyLoanProjection.termMonths} months`}
                 />
               </div>
-            </div>
+            </>
           ) : null}
 
           {activeTab === "scheme-grants" ? (
-            <div className="tab-panel">
+            <>
               <div className="section-header">
                 <div>
                   <h2>Scheme & Grant</h2>
@@ -858,11 +895,11 @@ function App() {
                   rows={result.schemeRuleRows.slice(0, 6)}
                 />
               </div>
-            </div>
+            </>
           ) : null}
 
           {activeTab === "timeline-payments" ? (
-            <div className="tab-panel">
+            <>
               <div className="section-header">
                 <div>
                   <h2>Payments</h2>
@@ -946,56 +983,89 @@ function App() {
 
               <div className="payment-timeline" aria-label="Payment timeline">
                 {result.paymentGroups.map((group, groupIndex) => (
-                  <article
-                    className={`payment-node payment-node-${toStageTone(group.stage)}`}
-                    key={group.stage + groupIndex}
-                  >
+                  <article className={`payment-node payment-node-${toStageTone(group.stage)}`} key={group.stage + groupIndex}>
                     <span className="payment-node-dot" aria-hidden="true">
                       {toStageIcon(group.stage)}
                     </span>
                     <div className="payment-node-main">
-                      <div className="payment-node-head">
-                        <p className="section-kicker">{group.stage}</p>
-                        <span>{formatDate(group.date)}</span>
-                      </div>
-                      <div className="payment-node-amount">{toCurrency(group.knownTotal)}</div>
-                      <p className="small">
-                        {group.rows.length} item(s)
-                        {group.rows.some((row) => row.amount === null)
-                          ? ` • ${group.rows.filter((row) => row.amount === null).length} pending`
-                          : ""}
-                      </p>
-
-                      <ul className="payment-chip-list">
-                        {group.rows.map((row, rowIndex) => (
-                          <li className="payment-chip" key={row.item + rowIndex}>
-                            <span className="payment-chip-label">{row.item}</span>
-                            <span className="payment-chip-value">
-                              {row.amount === null ? "Depends" : toCurrency(row.amount)}
-                            </span>
-                            <div className="payment-tooltip" role="tooltip">
-                              <p>
-                                <strong>Payment type:</strong> {row.paymentMode}
-                              </p>
-                              <p>
-                                <strong>Details:</strong> {row.remarks}
-                              </p>
-                              <p>
-                                <strong>Source:</strong> {renderSource(row.sourceKey)}
-                              </p>
+                      <div className="payment-matrix-layout">
+                        <aside className="payment-node-side">
+                          <p className="section-kicker">{group.stage}</p>
+                          <p className="payment-side-date">{formatDate(group.date)}</p>
+                          <div className="payment-node-amount">{toCurrency(group.knownTotal)}</div>
+                          <p className="small">
+                            {group.rows.length} item(s)
+                            {group.rows.some((row) => row.amount === null)
+                              ? ` • ${group.rows.filter((row) => row.amount === null).length} pending`
+                              : ""}
+                          </p>
+                          <div className="cpf-meter">
+                            <div className="cpf-meter-head">
+                              <span>CPF/OA-payable known</span>
+                              <strong>{toCurrency(getCpfEligibleKnownTotal(group.rows))}</strong>
                             </div>
-                          </li>
-                        ))}
-                      </ul>
+                            <div className="cpf-meter-track" aria-hidden="true">
+                              <span
+                                className="cpf-meter-fill"
+                                style={{ width: `${getCpfEligibleRatio(group.rows)}%` }}
+                              ></span>
+                            </div>
+                          </div>
+                        </aside>
+
+                        <div className="payment-matrix-wrap">
+                          <table className="payment-matrix">
+                            <thead>
+                              <tr>
+                                <th>Item</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                                <th>Funding</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {group.rows.map((row, rowIndex) => {
+                                const funding = getFundingBadge(row.paymentMode);
+
+                                return (
+                                  <tr key={row.item + rowIndex} className="payment-row">
+                                    <td className="payment-item-cell">
+                                      <span className="payment-item-name">{row.item}</span>
+                                      <div className="payment-tooltip" role="tooltip">
+                                        <p>
+                                          <strong>Payment type:</strong> {row.paymentMode}
+                                        </p>
+                                        <p>
+                                          <strong>Details:</strong> {row.remarks}
+                                        </p>
+                                        <p>
+                                          <strong>Source:</strong> {renderSource(row.sourceKey)}
+                                        </p>
+                                      </div>
+                                    </td>
+                                    <td>{row.amount === null ? "Depends" : toCurrency(row.amount)}</td>
+                                    <td>{formatDate(row.date)}</td>
+                                    <td>
+                                      <span className={`funding-badge funding-${funding.tone}`}>
+                                        {funding.label}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
                     </div>
                   </article>
                 ))}
               </div>
-            </div>
+            </>
           ) : null}
 
           {activeTab === "sources" ? (
-            <div className="tab-panel">
+            <>
               <div className="section-header">
                 <div>
                   <h2>Sources</h2>
@@ -1011,8 +1081,10 @@ function App() {
                   ))}
                 </ul>
               </article>
-            </div>
+            </>
           ) : null}
+            </div>
+          </div>
         </section>
       </main>
     </div>
@@ -1218,6 +1290,67 @@ function toStageIcon(stage: StageName): string {
   }
 
   return "🔑";
+}
+
+function isCpfOaPayable(paymentMode: string): boolean | null {
+  const normalized = paymentMode.toLowerCase();
+
+  if (normalized.includes("cannot use cpf") || normalized.includes("cash only")) {
+    return false;
+  }
+
+  if (normalized.includes("cpf")) {
+    return true;
+  }
+
+  return null;
+}
+
+function getCpfEligibleKnownTotal(rows: ScheduleRow[]): number {
+  return roundTo2(
+    rows.reduce((sum, row) => {
+      if (row.amount === null) {
+        return sum;
+      }
+
+      return isCpfOaPayable(row.paymentMode) === true ? sum + row.amount : sum;
+    }, 0),
+  );
+}
+
+function getCpfEligibleRatio(rows: ScheduleRow[]): number {
+  const knownTotal = rows.reduce((sum, row) => sum + (row.amount ?? 0), 0);
+  if (knownTotal <= 0) {
+    return 0;
+  }
+
+  return (getCpfEligibleKnownTotal(rows) / knownTotal) * 100;
+}
+
+function getFundingBadge(paymentMode: string): {
+  label: string;
+  tone: "cpf" | "cash" | "mixed";
+} {
+  const payable = isCpfOaPayable(paymentMode);
+
+  if (payable === true) {
+    return {
+      label: "CPF/OA possible",
+      tone: "cpf",
+    };
+  }
+
+  if (payable === false) {
+    return {
+      label: "Cash only",
+      tone: "cash",
+    };
+  }
+
+  return {
+    label: "Check notice",
+    tone: "mixed",
+  };
 }
 
 function formatRoleLabel(role: PersonRole): string {

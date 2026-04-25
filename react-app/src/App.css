@@ -293,6 +293,17 @@ a {
   animation: tabReveal 260ms ease both;
 }
 
+.tab-stage {
+  position: relative;
+  overflow: hidden;
+  transition: height 320ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  will-change: height;
+}
+
+.tab-stage .tab-panel {
+  min-height: 620px;
+}
+
 .small {
   margin: 0;
   color: var(--muted);
@@ -763,7 +774,7 @@ th {
 .payment-timeline {
   position: relative;
   display: grid;
-  gap: 0.75rem;
+  gap: 0.62rem;
   padding-left: 0.9rem;
 }
 
@@ -800,7 +811,7 @@ th {
 .payment-node-main {
   border: 1px solid var(--line);
   border-radius: 16px;
-  padding: 0.78rem 0.85rem;
+  padding: 0.66rem 0.72rem;
   background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 84%, transparent), var(--surface-soft));
   transition: transform 180ms ease, box-shadow 180ms ease;
 }
@@ -810,22 +821,133 @@ th {
   box-shadow: 0 12px 24px rgba(18, 36, 38, 0.12);
 }
 
-.payment-node-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.9rem;
-  align-items: baseline;
+
+.payment-matrix-layout {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.82fr) minmax(340px, 2fr);
+  gap: 0.82rem;
+  align-items: start;
 }
 
-.payment-node-head span {
+.payment-node-side {
+  display: grid;
+  gap: 0.36rem;
+  align-content: start;
+  padding-right: 0.22rem;
+}
+
+.payment-side-date {
+  margin: 0;
   color: var(--muted);
-  font-size: 0.84rem;
+  font-size: 0.82rem;
 }
 
 .payment-node-amount {
-  font-size: 1.2rem;
+  font-size: 1.06rem;
   font-weight: 700;
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.1rem;
+}
+
+.cpf-meter {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 0.2rem;
+}
+
+.cpf-meter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.cpf-meter-head strong {
+  color: var(--ink);
+  font-size: 0.76rem;
+}
+
+.cpf-meter-track {
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--brand-soft) 55%, var(--surface));
+  overflow: hidden;
+}
+
+.cpf-meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #4fc39f, #2e8d88);
+  transition: width 280ms ease;
+}
+
+.payment-matrix-wrap {
+  overflow-x: auto;
+}
+
+.payment-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.payment-matrix th,
+.payment-matrix td {
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  padding: 0.44rem 0.28rem;
+  vertical-align: top;
+}
+
+.payment-matrix th {
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-size: 0.68rem;
+  color: var(--muted);
+  background: transparent;
+  padding-top: 0;
+}
+
+.payment-matrix tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.payment-item-cell {
+  position: relative;
+}
+
+.payment-item-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.funding-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.48rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.funding-cpf {
+  background: color-mix(in srgb, var(--success-bg) 80%, transparent);
+  color: var(--success);
+}
+
+.funding-cash {
+  background: color-mix(in srgb, var(--warn-bg) 85%, transparent);
+  color: var(--warn);
+}
+
+.funding-mixed {
+  background: color-mix(in srgb, var(--info-bg) 88%, transparent);
+  color: var(--brand);
 }
 
 .payment-node-application .payment-node-dot {
@@ -844,42 +966,12 @@ th {
   background: #f5ddff;
 }
 
-.payment-chip-list {
-  list-style: none;
-  margin: 0.6rem 0 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-}
-
-.payment-chip {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 0.28rem 0.58rem;
-  background: var(--surface);
-  font-size: 0.81rem;
-  cursor: default;
-}
-
-.payment-chip-label {
-  color: var(--muted);
-}
-
-.payment-chip-value {
-  font-weight: 700;
-}
-
 .payment-tooltip {
   position: absolute;
   left: 0;
-  bottom: calc(100% + 10px);
+  bottom: calc(100% + 8px);
   width: min(320px, 85vw);
-  padding: 0.62rem 0.72rem;
+  padding: 0.56rem 0.64rem;
   border-radius: 12px;
   background: color-mix(in srgb, var(--surface) 80%, #000 20%);
   color: var(--ink);
@@ -901,8 +993,8 @@ th {
   margin-top: 0.35rem;
 }
 
-.payment-chip:hover .payment-tooltip,
-.payment-chip:focus-within .payment-tooltip {
+.payment-row:hover .payment-tooltip,
+.payment-row:focus-within .payment-tooltip {
   opacity: 1;
   transform: translateY(0);
 }
@@ -1041,6 +1133,18 @@ th {
   .payment-node-head {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .tab-stage .tab-panel {
+    min-height: 0;
+  }
+
+  .payment-matrix-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-matrix {
+    font-size: 0.78rem;
   }
 
   .payment-timeline {
