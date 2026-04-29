@@ -602,46 +602,11 @@ function App() {
                   value={toCurrency(result.household.oaMonthlyInflow)}
                 />
                 <SummaryStat
-                  label="Current status"
-                  value={
-                    ehgStatus === "eligible"
-                      ? "Grant-ready"
-                      : ehgStatus === "incomplete"
-                        ? "Pending inputs"
-                        : "Needs fixes"
-                  }
-                  hint={
-                    ehgStatus === "eligible"
-                      ? result.ehgAssessment.bandLabel
-                      : ehgStatus === "incomplete"
-                        ? "Complete required fields to check"
-                        : `${result.ehgAssessment.reasons.length} blocker(s) to clear`
-                  }
-                  tone={
-                    ehgStatus === "eligible"
-                      ? "success"
-                      : ehgStatus === "ineligible"
-                        ? "warn"
-                        : "default"
-                  }
+                  label="EHG grant estimate"
+                  value={toCurrency(result.ehgGrant)}
+                  hint={ehgStatus === "eligible" ? result.ehgAssessment.bandLabel : "Based on current inputs"}
                 />
               </div>
-
-              <p
-                className={
-                  ehgStatus === "eligible"
-                    ? "status-inline status-ok"
-                    : ehgStatus === "ineligible"
-                      ? "status-inline status-gap"
-                      : "status-inline status-info"
-                }
-              >
-                {ehgStatus === "eligible"
-                  ? `Matched families EHG band: ${result.ehgAssessment.bandLabel}. Current grant amount: ${toCurrency(
-                      result.ehgAssessment.grantAmount,
-                    )}.`
-                  : result.ehgAssessment.reasons.join(" ")}
-              </p>
 
               <div className="member-board">
                 {formValues.members.map((member, index) => {
@@ -1020,7 +985,7 @@ function App() {
                     {ehgStatus === "eligible"
                       ? "Eligible based on current profile"
                       : ehgStatus === "incomplete"
-                        ? "Complete profile to check eligibility"
+                        ? "Not assessed yet"
                         : "Eligibility gaps detected"}
                   </span>
                 </div>
@@ -2333,7 +2298,7 @@ function calculateEhgAssessment(household: HouseholdProjection): EhgAssessment {
     grantAmount: eligible && band ? band.grantAmount : 0,
     bandLabel:
       status === "incomplete"
-        ? "Complete profile to see EHG band"
+        ? "Not assessed"
         : band?.label ?? "Outside families EHG band",
     averageMonthlyIncome,
     reasons,
