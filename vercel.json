@@ -1,14 +1,8 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "react-app/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
+  "installCommand": "npm install --prefix react-app",
+  "buildCommand": "npm run build --prefix react-app",
+  "outputDirectory": "react-app/dist",
   "rewrites": [
     {
       "source": "/(.*)",
