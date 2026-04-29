@@ -1325,9 +1325,7 @@ th {
   }
 
   .flat-types {
-    display: flex;
-    flex-wrap: wrap;
-    overflow-x: visible;
+    justify-content: flex-start;
   }
 }
 
@@ -1426,17 +1424,22 @@ th {
 .project-meta {
   font-size: 0.85rem;
   color: var(--muted);
-  margin-bottom: 1rem;
+  margin-bottom: 0.65rem;
 }
 
 .flat-types {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   flex-wrap: nowrap;
   gap: 0.45rem;
-  max-width: 100%;
+  width: 100%;
+  justify-content: center;
   overflow-x: auto;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+}
+
+.flat-types::-webkit-scrollbar {
+  display: none;
 }
 
 .flat-type-btn {
