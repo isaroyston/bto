@@ -27,6 +27,16 @@ type Citizenship = "singapore-citizen" | "permanent-resident" | "other";
 type AppMode = "welcome" | "planner";
 type SegmentFilter = "all" | "cpf-oa" | "cash-only" | "application" | "booking" | "agreement" | "key";
 
+const GENERIC_BTO_PROJECT_NAME = "Upcoming BTO";
+
+const FLAT_TYPE_LABELS: Record<FlatType, string> = {
+  "2-room": "2-Room Flexi",
+  "3-room": "3-Room",
+  "4-room": "4-Room",
+  "5-room": "5-Room / 3Gen",
+  executive: "Executive / Multi-Generation",
+};
+
 interface PersonFormValues {
   id: string;
   role: PersonRole;
@@ -821,10 +831,10 @@ function App() {
                         value={formValues.flatType}
                         onChange={handlePlannerFieldChange}
                       >
-                        <option value="2-room">2-room Flexi</option>
-                        <option value="3-room">3-room</option>
-                        <option value="4-room">4-room</option>
-                        <option value="5-room">5-room / 3-Gen</option>
+                        <option value="2-room">2-Room Flexi</option>
+                        <option value="3-room">3-Room</option>
+                        <option value="4-room">4-Room</option>
+                        <option value="5-room">5-Room / 3Gen</option>
                         <option value="executive">Executive / Multi-Generation</option>
                       </select>
                     </Field>
@@ -1319,9 +1329,17 @@ function getSelectedBtoInfo(projects: BtoProject[], projectId: string | null, fl
   const variant = project.flatVariants.find((v) => v.type === flatType);
   if (!variant) return null;
   return {
-    projectName: `${project.name} (${project.launchMonth})`,
-    variantInfo: `${flatType} · ${toCurrency(variant.basePrice)}`,
+    projectName: `${getBtoProjectDisplayName(project)} (${project.launchMonth})`,
+    variantInfo: `${getFlatTypeLabel(flatType)} · ${toCurrency(variant.basePrice)}`,
   };
+}
+
+function getBtoProjectDisplayName(_project: BtoProject): string {
+  return GENERIC_BTO_PROJECT_NAME;
+}
+
+function getFlatTypeLabel(flatType: FlatType): string {
+  return FLAT_TYPE_LABELS[flatType];
 }
 
 function WelcomeScreen(props: {
@@ -1353,7 +1371,7 @@ function WelcomeScreen(props: {
                     <div className="projects-grid">
                       {projects.map((project) => (
                         <div key={project.id} className="project-card">
-                          <div className="project-name">{project.name}</div>
+                          <div className="project-name">{getBtoProjectDisplayName(project)}</div>
                           <div className="project-meta">{project.location}</div>
                           <div className="flat-types">
                             {project.flatVariants.map((variant) => (
@@ -1362,7 +1380,7 @@ function WelcomeScreen(props: {
                                 className="flat-type-btn"
                                 onClick={() => props.onSelectBtoProject(project.id, variant.type)}
                               >
-                                {variant.type}
+                                {getFlatTypeLabel(variant.type)}
                               </button>
                             ))}
                           </div>

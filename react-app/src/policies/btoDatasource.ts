@@ -256,12 +256,10 @@ export async function fetchBtoProjects(): Promise<BtoProject[]> {
   // Try fetching from data.gov.sg first
   const dataGovProjects = await fetchFromDataGovSg();
   if (dataGovProjects && dataGovProjects.length > 0) {
-    console.log("✓ Loaded BTO projects from data.gov.sg");
     return dataGovProjects;
   }
 
   // Fallback to hardcoded sample data
-  console.log("⚠ Using fallback BTO projects (hardcoded sample data)");
   return FALLBACK_BTO_PROJECTS;
 }
 
@@ -276,7 +274,6 @@ export async function getBtoProjectsCached(): Promise<BtoProject[]> {
   const now = Date.now();
   
   if (cachedProjects && now - cacheTime < CACHE_DURATION) {
-    console.log("✓ Using cached BTO projects");
     return cachedProjects;
   }
 

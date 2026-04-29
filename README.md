@@ -1,6 +1,6 @@
-# HDB Payment Planner (No-Build Version)
+# HDB Payment Planner (React + TypeScript)
 
-This is a no-build web app for planning HDB new-flat (BTO) payments.
+This repository is a React + TypeScript planner for HDB new-flat (BTO) payments.
 
 ## What it does
 
@@ -14,35 +14,42 @@ This is a no-build web app for planning HDB new-flat (BTO) payments.
 - Shows source links for policy references (HDB, IRAS, CPF).
 - Exports schedule items as an .ics calendar file.
 
-## Run locally (no Node/npm needed)
+## Project location
 
-1. Open [index.html](index.html) in your browser.
-2. Fill in your details and click "Calculate Plan".
-3. Click "Export .ics Reminder File" to download calendar entries.
+The app lives in the [react-app](react-app) folder.
 
-## Important assumptions
+## Run locally
 
-- This tool is for planning/budgeting.
-- Final amounts and due dates are subject to official notices and appointment letters.
-- HPS premium is displayed as "Depends" because it requires member-specific inputs in CPF's calculator.
+1. Open a terminal in [react-app](react-app).
+2. Install dependencies:
+
+  npm install
+
+3. Start development server:
+
+  npm run dev
+
+## Build
+
+From [react-app](react-app):
+
+npm run build
+
+## Deploy (Vercel)
+
+If the repo root is connected to Vercel, ensure the Root Directory is set to `react-app`.
 
 ## Policy maintenance
 
-Policy values and source URLs are in [app.js](app.js) under the `POLICY` object.
+All policy values are centralized in [react-app/src/policies/policyConfig.ts](react-app/src/policies/policyConfig.ts).
 
-Update these sections when policies change:
-- `POLICY.lastVerified`
-- `POLICY.fees`
-- `POLICY.downpaymentRules`
-- `POLICY.sources`
+Update workflow:
 
-After updating, reload [index.html](index.html) and test one known scenario.
-
-## Current baseline (as configured)
-
-- Last verified: 2026-04-24
-- Country: Singapore
-
-## Next step when ready for scale
-
-When Node/npm is available, migrate this logic to a React + TypeScript structure while reusing the same policy and calculator behavior.
+1. Review official source pages listed in `sources`.
+2. Update policy constants and rates in `POLICY_CONFIG`.
+3. Set `lastVerified` to the review date.
+4. Adjust `updateCadenceDays` if your review schedule changes.
+5. For CPF defaults, update:
+  - `cpfContributionByAgeBand`
+  - `cpfAllocationByAgeBand`
+6. Run build and validate one known scenario.
