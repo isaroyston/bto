@@ -1424,17 +1424,22 @@ th {
 }
 
 .flat-types {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  display: flex;
+  flex-wrap: nowrap;
   gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  scrollbar-width: thin;
 }
 
 .flat-type-btn {
+  flex: 0 0 auto;
   background: var(--brand-soft);
   border: 1px solid var(--line);
   border-radius: 6px;
-  padding: 0.6rem 0.8rem;
-  font-size: 0.85rem;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.78rem;
+  white-space: nowrap;
   color: var(--brand);
   font-weight: 500;
   cursor: pointer;
