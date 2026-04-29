@@ -101,12 +101,15 @@ interface HouseholdProjection {
 }
 
 interface EhgAssessment {
+  status: EhgAssessmentStatus;
   eligible: boolean;
   grantAmount: number;
   bandLabel: string;
   averageMonthlyIncome: number;
   reasons: string[];
 }
+
+type EhgAssessmentStatus = "eligible" | "incomplete" | "ineligible";
 
 interface LoanProjection {
   annualInterestRate: number;
@@ -290,6 +293,7 @@ function App() {
     100,
     (result.ehgAssessment.averageMonthlyIncome / EHG_FAMILIES_POLICY_META.maxIncomeInclusive) * 100,
   );
+  const ehgStatus = result.ehgAssessment.status;
 
   useEffect(() => {
     window.localStorage.setItem("hdb-planner-theme", themeMode);
@@ -599,22 +603,40 @@ function App() {
                 />
                 <SummaryStat
                   label="Current status"
-                  value={result.ehgAssessment.eligible ? "Grant-ready" : "Needs fixes"}
-                  hint={
-                    result.ehgAssessment.eligible
-                      ? result.ehgAssessment.bandLabel
-                      : `${result.ehgAssessment.reasons.length} blocker(s) to clear`
+                  value={
+                    ehgStatus === "eligible"
+                      ? "Grant-ready"
+                      : ehgStatus === "incomplete"
+                        ? "Pending inputs"
+                        : "Needs fixes"
                   }
-                  tone={result.ehgAssessment.eligible ? "success" : "warn"}
+                  hint={
+                    ehgStatus === "eligible"
+                      ? result.ehgAssessment.bandLabel
+                      : ehgStatus === "incomplete"
+                        ? "Complete required fields to check"
+                        : `${result.ehgAssessment.reasons.length} blocker(s) to clear`
+                  }
+                  tone={
+                    ehgStatus === "eligible"
+                      ? "success"
+                      : ehgStatus === "ineligible"
+                        ? "warn"
+                        : "default"
+                  }
                 />
               </div>
 
               <p
                 className={
-                  result.ehgAssessment.eligible ? "status-inline status-ok" : "status-inline status-gap"
+                  ehgStatus === "eligible"
+                    ? "status-inline status-ok"
+                    : ehgStatus === "ineligible"
+                      ? "status-inline status-gap"
+                      : "status-inline status-info"
                 }
               >
-                {result.ehgAssessment.eligible
+                {ehgStatus === "eligible"
                   ? `Matched families EHG band: ${result.ehgAssessment.bandLabel}. Current grant amount: ${toCurrency(
                       result.ehgAssessment.grantAmount,
                     )}.`
@@ -988,14 +1010,18 @@ function App() {
                   <p className="small">{result.ehgAssessment.bandLabel}</p>
                   <span
                     className={
-                      result.ehgAssessment.eligible
+                      ehgStatus === "eligible"
                         ? "grant-status grant-status-pass"
-                        : "grant-status grant-status-fail"
+                        : ehgStatus === "ineligible"
+                          ? "grant-status grant-status-fail"
+                          : "grant-status grant-status-neutral"
                     }
                   >
-                    {result.ehgAssessment.eligible
+                    {ehgStatus === "eligible"
                       ? "Eligible based on current profile"
-                      : "Eligibility gaps detected"}
+                      : ehgStatus === "incomplete"
+                        ? "Complete profile to check eligibility"
+                        : "Eligibility gaps detected"}
                   </span>
                 </div>
                 <div className="grant-hero-meter">
@@ -2227,22 +2253,23 @@ function calculateHouseholdProjection(inputs: PlannerFormValues): HouseholdProje
 }
 
 function calculateEhgAssessment(household: HouseholdProjection): EhgAssessment {
-  const reasons: string[] = [];
+  const incompleteReasons: string[] = [];
+  const ineligibleReasons: string[] = [];
   const relevantMembers = household.relevantMembers;
   const applicants = relevantMembers.filter(
     (member) => member.role === "applicant" || member.role === "co-applicant",
   );
 
   if (relevantMembers.length < 2) {
-    reasons.push("Add at least two relevant family members for the families-only EHG flow.");
+    incompleteReasons.push("Add at least two relevant family members for the families-only EHG flow.");
   }
 
   if (applicants.length === 0) {
-    reasons.push("Include at least one applicant or co-applicant in the relevant household.");
+    incompleteReasons.push("Include at least one applicant or co-applicant in the relevant household.");
   }
 
   if (!relevantMembers.some((member) => member.citizenship === "singapore-citizen")) {
-    reasons.push("At least one relevant family member should be a Singapore Citizen.");
+    ineligibleReasons.push("At least one relevant family member should be a Singapore Citizen.");
   }
 
   if (
@@ -2252,11 +2279,11 @@ function calculateEhgAssessment(household: HouseholdProjection): EhgAssessment {
         member.citizenship !== "permanent-resident",
     )
   ) {
-    reasons.push("This planner treats non-SC/SPR family profiles as unsupported for EHG.");
+    ineligibleReasons.push("This planner treats non-SC/SPR family profiles as unsupported for EHG.");
   }
 
   if (relevantMembers.some((member) => !member.firstTimer)) {
-    reasons.push("Families EHG from this PDF table applies to first-timer households.");
+    ineligibleReasons.push("Families EHG from this PDF table applies to first-timer households.");
   }
 
   if (
@@ -2266,18 +2293,18 @@ function calculateEhgAssessment(household: HouseholdProjection): EhgAssessment {
         (!member.currentlyWorking || !member.employmentContinuous12Months),
     )
   ) {
-    reasons.push(
+    ineligibleReasons.push(
       "Income-contributing members should be currently working and have 12 months of employment continuity.",
     );
   }
 
   const averageMonthlyIncome = household.grossMonthlyIncome;
   if (averageMonthlyIncome <= 0) {
-    reasons.push("Enter at least one positive monthly income contribution for EHG assessment.");
+    incompleteReasons.push("Enter at least one positive monthly income contribution for EHG assessment.");
   }
 
   if (averageMonthlyIncome > EHG_FAMILIES_POLICY_META.maxIncomeInclusive) {
-    reasons.push(
+    ineligibleReasons.push(
       `Average monthly household income exceeds the ${toCurrency(
         EHG_FAMILIES_POLICY_META.maxIncomeInclusive,
       )} ceiling in the local PDF table.`,
@@ -2285,18 +2312,31 @@ function calculateEhgAssessment(household: HouseholdProjection): EhgAssessment {
   }
 
   const band = lookupEhgFamiliesGrant(averageMonthlyIncome);
-  const eligible = reasons.length === 0 && band !== null;
+  const status: EhgAssessmentStatus =
+    ineligibleReasons.length > 0
+      ? "ineligible"
+      : incompleteReasons.length > 0
+        ? "incomplete"
+        : band !== null
+          ? "eligible"
+          : "ineligible";
+  const eligible = status === "eligible";
+  const reasons = eligible
+    ? ["Relevant family members pass the planner's first-timer, citizenship, and income checks."]
+    : status === "incomplete"
+      ? incompleteReasons
+      : ineligibleReasons;
 
   return {
+    status,
     eligible,
     grantAmount: eligible && band ? band.grantAmount : 0,
-    bandLabel: band?.label ?? "Outside families EHG band",
+    bandLabel:
+      status === "incomplete"
+        ? "Complete profile to see EHG band"
+        : band?.label ?? "Outside families EHG band",
     averageMonthlyIncome,
-    reasons: eligible
-      ? [
-          "Relevant family members pass the planner's first-timer, citizenship, and income checks.",
-        ]
-      : reasons,
+    reasons,
   };
 }
 

@@ -682,6 +682,11 @@ button:hover {
   color: var(--warn);
 }
 
+.grant-status-neutral {
+  background: var(--info-bg);
+  color: var(--brand);
+}
+
 .grant-hero-meter {
   display: grid;
   gap: 0.55rem;
