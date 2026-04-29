@@ -1,71 +1,99 @@
 import type { BtoProject, BtoFlatVariant } from "./policyConfig";
 
-/**
- * Fallback hardcoded BTO projects (sample data from recent launces)
- * These are updated periodically - ideally fetched from HDB API
- */
-const FALLBACK_BTO_PROJECTS: BtoProject[] = [
-  {
-    id: "yung-ho-2026-06",
-    launchMonth: "2026-06",
-    name: "Yung Ho Road",
-    location: "Tiong Bahru",
-    district: "TB",
-    suggestedFinancing: "hdb",
-    suggestedScheme: "normal",
-    flatVariants: [
-      { type: "3-room", basePrice: 475000, maxEhg: 85000, suggestedOccupants: 3, suggestedTenureYears: 25 },
-      { type: "4-room", basePrice: 595000, maxEhg: 110000, suggestedOccupants: 4, suggestedTenureYears: 25 },
-      { type: "5-room", basePrice: 715000, maxEhg: 130000, suggestedOccupants: 5, suggestedTenureYears: 30 },
-    ],
-  },
-  {
-    id: "bedok-north-2026-06",
-    launchMonth: "2026-06",
-    name: "Bedok North",
-    location: "Bedok",
-    district: "BD",
-    suggestedFinancing: "hdb",
-    suggestedScheme: "normal",
-    flatVariants: [
-      { type: "3-room", basePrice: 485000, maxEhg: 85000, suggestedOccupants: 3, suggestedTenureYears: 25 },
-      { type: "4-room", basePrice: 615000, maxEhg: 110000, suggestedOccupants: 4, suggestedTenureYears: 25 },
-      { type: "5-room", basePrice: 735000, maxEhg: 130000, suggestedOccupants: 5, suggestedTenureYears: 30 },
-    ],
-  },
-  {
-    id: "tengah-2026-08",
-    launchMonth: "2026-08",
-    name: "Tengah",
-    location: "Tengah",
-    district: "TG",
-    suggestedFinancing: "hdb",
-    suggestedScheme: "staggered",
-    flatVariants: [
-      { type: "3-room", basePrice: 425000, maxEhg: 85000, suggestedOccupants: 3, suggestedTenureYears: 25 },
-      { type: "4-room", basePrice: 545000, maxEhg: 110000, suggestedOccupants: 4, suggestedTenureYears: 25 },
-      { type: "5-room", basePrice: 665000, maxEhg: 130000, suggestedOccupants: 5, suggestedTenureYears: 30 },
-    ],
-  },
-  {
-    id: "sengkang-2026-08",
-    launchMonth: "2026-08",
-    name: "Sengkang",
-    location: "Sengkang",
-    district: "SK",
-    suggestedFinancing: "hdb",
-    suggestedScheme: "normal",
-    flatVariants: [
-      { type: "4-room", basePrice: 625000, maxEhg: 110000, suggestedOccupants: 4, suggestedTenureYears: 25 },
-      { type: "5-room", basePrice: 750000, maxEhg: 130000, suggestedOccupants: 5, suggestedTenureYears: 30 },
-    ],
-  },
+type BtoFlatType = BtoFlatVariant["type"];
+
+const FALLBACK_LAUNCH_MONTH = "2026-06";
+const EXPECTED_JUNE_2026_PROJECT_COUNT = 7;
+
+const JUNE_2026_LOCATION_COUNTS: Record<string, number> = {
+  "ang mo kio": 2,
+  bishan: 1,
+  "bukit merah": 1,
+  sembawang: 2,
+  woodlands: 1,
+};
+
+const FALLBACK_BASE_PRICES: Record<BtoFlatType, number> = {
+  "2-room": 320000,
+  "3-room": 460000,
+  "4-room": 580000,
+  "5-room": 700000,
+  executive: 780000,
+};
+
+const JUNE_2026_FALLBACK_PROJECTS: BtoProject[] = [
+  createFallbackProject({
+    id: "ang-mo-kio-2026-06-a",
+    location: "Ang Mo Kio",
+    flatTypes: ["3-room", "4-room"],
+  }),
+  createFallbackProject({
+    id: "ang-mo-kio-2026-06-b",
+    location: "Ang Mo Kio",
+    flatTypes: ["2-room", "4-room"],
+  }),
+  createFallbackProject({
+    id: "bishan-2026-06",
+    location: "Bishan",
+    flatTypes: ["2-room", "4-room"],
+  }),
+  createFallbackProject({
+    id: "bukit-merah-2026-06",
+    location: "Bukit Merah",
+    flatTypes: ["2-room", "3-room", "4-room"],
+  }),
+  createFallbackProject({
+    id: "sembawang-2026-06-a",
+    location: "Sembawang",
+    flatTypes: ["2-room", "3-room", "4-room", "5-room"],
+  }),
+  createFallbackProject({
+    id: "sembawang-2026-06-b",
+    location: "Sembawang",
+    flatTypes: ["2-room", "3-room", "4-room", "5-room"],
+  }),
+  createFallbackProject({
+    id: "woodlands-2026-06",
+    location: "Woodlands",
+    flatTypes: ["2-room", "3-room", "4-room", "5-room"],
+  }),
 ];
+
+function createFallbackProject(options: {
+  id: string;
+  location: string;
+  flatTypes: BtoFlatType[];
+  launchMonth?: string;
+  suggestedFinancing?: "hdb" | "bank";
+  suggestedScheme?: "normal" | "staggered" | "dia";
+}): BtoProject {
+  const launchMonth = options.launchMonth ?? FALLBACK_LAUNCH_MONTH;
+  return {
+    id: options.id,
+    launchMonth,
+    name: options.location,
+    location: options.location,
+    district: extractDistrict(options.location),
+    suggestedFinancing: options.suggestedFinancing ?? "hdb",
+    suggestedScheme: options.suggestedScheme ?? "normal",
+    flatVariants: sortFlatVariants(options.flatTypes.map(createFallbackVariant)),
+  };
+}
+
+function createFallbackVariant(type: BtoFlatType): BtoFlatVariant {
+  return {
+    type,
+    basePrice: FALLBACK_BASE_PRICES[type],
+    maxEhg: estimateMaxEhg(type),
+    suggestedOccupants: estimateOccupants(type),
+    suggestedTenureYears: type === "5-room" ? 30 : 25,
+  };
+}
 
 /**
  * Fetch BTO project data from data.gov.sg HDB dataset
  * This is the official public data source for HDB information
- * 
+ *
  * Note: The resource_id may need updating - check data.gov.sg/datasets for latest HDB BTO launches
  * Alternative: Can scrape https://www.hdb.gov.sg/bto or use HDB's undocumented API
  */
@@ -75,9 +103,9 @@ async function fetchFromDataGovSg(): Promise<BtoProject[] | null> {
     // Resource ID should be for HDB BTO project launches
     const response = await fetch(
       "https://data.gov.sg/api/action/datastore_search?" +
-        "resource_id=66e148a8-70dd-4eda-8ef8-8d53b18c1e23&limit=100"
+        "resource_id=66e148a8-70dd-4eda-8ef8-8d53b18c1e23&limit=100",
     );
-    
+
     if (!response.ok) {
       console.warn("data.gov.sg API error:", response.status);
       return null;
@@ -109,26 +137,32 @@ function transformDataGovSgRecords(records: Record<string, unknown>[]): BtoProje
   for (const record of records) {
     try {
       // Extract fields from data.gov.sg record
-      const projectName = String(record["Project Name"] || record["project_name"] || "");
-      const location = String(record["Location"] || record["location"] || "");
+      const projectName = String(record["Project Name"] || record["project_name"] || "").trim();
+      const location = String(record["Location"] || record["location"] || projectName || "").trim();
       const launchMonth = String(record["Launch Month"] || record["launch_month"] || "");
-      const flatType = String(record["Flat Type"] || record["flat_type"] || "");
-      const basePrice = parseInt(String(record["Base Price"] || record["base_price"] || "0"), 10);
+      const flatTypeRaw = String(record["Flat Type"] || record["flat_type"] || "");
+      const basePriceRaw = String(record["Base Price"] || record["base_price"] || "0");
 
-      if (!projectName || !flatType || basePrice <= 0) continue;
+      const flatTypeKey = normalizeFlatType(flatTypeRaw);
+      if (!projectName || !flatTypeKey) {
+        continue;
+      }
 
-      // Create project key
-      const projectId = projectName.toLowerCase().replace(/\s+/g, "-");
       const normalizedLaunchMonth = normalizeDate(launchMonth);
+      const projectId = `${slugify(projectName)}-${normalizedLaunchMonth}`;
+      const parsedPrice = parseInt(basePriceRaw, 10);
+      const basePrice = Number.isFinite(parsedPrice) && parsedPrice > 0
+        ? parsedPrice
+        : FALLBACK_BASE_PRICES[flatTypeKey];
 
       // Initialize project if not exists
       if (!projects[projectId]) {
         projects[projectId] = {
-          id: `${projectId}-${normalizedLaunchMonth}`,
+          id: projectId,
           launchMonth: normalizedLaunchMonth,
           name: projectName,
-          location: location,
-          district: extractDistrict(location),
+          location: location || projectName,
+          district: extractDistrict(location || projectName),
           suggestedFinancing: "hdb",
           suggestedScheme: "normal",
           flatVariants: [],
@@ -136,20 +170,16 @@ function transformDataGovSgRecords(records: Record<string, unknown>[]): BtoProje
       }
 
       // Add flat variant
-      const flatTypeKey = flatType as "2-room" | "3-room" | "4-room" | "5-room" | "executive";
-      if (["2-room", "3-room", "4-room", "5-room", "executive"].includes(flatTypeKey)) {
-        const variant: BtoFlatVariant = {
-          type: flatTypeKey,
-          basePrice,
-          maxEhg: estimateMaxEhg(flatTypeKey),
-          suggestedOccupants: estimateOccupants(flatTypeKey),
-          suggestedTenureYears: flatTypeKey === "5-room" ? 30 : 25,
-        };
+      const variant: BtoFlatVariant = {
+        type: flatTypeKey,
+        basePrice,
+        maxEhg: estimateMaxEhg(flatTypeKey),
+        suggestedOccupants: estimateOccupants(flatTypeKey),
+        suggestedTenureYears: flatTypeKey === "5-room" ? 30 : 25,
+      };
 
-        // Avoid duplicates
-        if (!projects[projectId].flatVariants.some((v) => v.type === variant.type)) {
-          projects[projectId].flatVariants.push(variant);
-        }
+      if (!projects[projectId].flatVariants.some((existing) => existing.type === variant.type)) {
+        projects[projectId].flatVariants.push(variant);
       }
     } catch (err) {
       console.warn("Error transforming record:", record, err);
@@ -157,7 +187,93 @@ function transformDataGovSgRecords(records: Record<string, unknown>[]): BtoProje
     }
   }
 
-  return Object.values(projects);
+  return Object.values(projects)
+    .map((project) => ({
+      ...project,
+      flatVariants: sortFlatVariants(project.flatVariants),
+    }))
+    .sort((left, right) =>
+      left.launchMonth.localeCompare(right.launchMonth) || left.location.localeCompare(right.location),
+    );
+}
+
+function normalizeFlatType(raw: string): BtoFlatType | null {
+  const normalized = raw.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+  if (!normalized) {
+    return null;
+  }
+
+  if (normalized.includes("2") && normalized.includes("flexi")) {
+    return "2-room";
+  }
+
+  if (normalized.startsWith("2 ") || normalized.startsWith("2")) {
+    return "2-room";
+  }
+
+  if (normalized.includes("3gen") || normalized.includes("3 gen") || normalized.includes("three gen")) {
+    return "5-room";
+  }
+
+  if (normalized.startsWith("3 ") || normalized.startsWith("3")) {
+    return "3-room";
+  }
+
+  if (normalized.startsWith("4 ") || normalized.startsWith("4")) {
+    return "4-room";
+  }
+
+  if (normalized.startsWith("5 ") || normalized.startsWith("5")) {
+    return "5-room";
+  }
+
+  if (normalized.includes("executive")) {
+    return "executive";
+  }
+
+  return null;
+}
+
+function sortFlatVariants(variants: BtoFlatVariant[]): BtoFlatVariant[] {
+  const order: BtoFlatType[] = ["2-room", "3-room", "4-room", "5-room", "executive"];
+  return [...variants].sort((left, right) => order.indexOf(left.type) - order.indexOf(right.type));
+}
+
+function applyJune2026Fallback(projects: BtoProject[]): BtoProject[] {
+  const juneProjects = projects.filter((project) => project.launchMonth === FALLBACK_LAUNCH_MONTH);
+
+  if (
+    juneProjects.length === EXPECTED_JUNE_2026_PROJECT_COUNT &&
+    matchesExpectedJuneLocations(juneProjects)
+  ) {
+    return projects;
+  }
+
+  const otherProjects = projects.filter(
+    (project) => project.launchMonth !== FALLBACK_LAUNCH_MONTH,
+  );
+
+  return [...otherProjects, ...JUNE_2026_FALLBACK_PROJECTS].sort((left, right) =>
+    left.launchMonth.localeCompare(right.launchMonth) || left.location.localeCompare(right.location),
+  );
+}
+
+function matchesExpectedJuneLocations(projects: BtoProject[]): boolean {
+  const counts: Record<string, number> = {};
+
+  for (const project of projects) {
+    const key = normalizeLocation(project.location);
+    counts[key] = (counts[key] ?? 0) + 1;
+  }
+
+  return Object.entries(JUNE_2026_LOCATION_COUNTS).every(
+    ([location, requiredCount]) => (counts[location] ?? 0) >= requiredCount,
+  );
+}
+
+function normalizeLocation(value: string): string {
+  return value.toLowerCase().replace(/\s+/g, " ").trim();
 }
 
 /**
@@ -184,6 +300,14 @@ function normalizeDate(dateStr: string): string {
     const today = new Date();
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
   }
+}
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
 }
 
 /**
@@ -229,7 +353,7 @@ function estimateMaxEhg(flatType: string): number {
     "3-room": 85000,
     "4-room": 110000,
     "5-room": 130000,
-    "executive": 140000,
+    executive: 140000,
   };
   return ehgMap[flatType] || 85000;
 }
@@ -243,7 +367,7 @@ function estimateOccupants(flatType: string): number {
     "3-room": 3,
     "4-room": 4,
     "5-room": 5,
-    "executive": 5,
+    executive: 5,
   };
   return occupantMap[flatType] || 3;
 }
@@ -256,11 +380,11 @@ export async function fetchBtoProjects(): Promise<BtoProject[]> {
   // Try fetching from data.gov.sg first
   const dataGovProjects = await fetchFromDataGovSg();
   if (dataGovProjects && dataGovProjects.length > 0) {
-    return dataGovProjects;
+    return applyJune2026Fallback(dataGovProjects);
   }
 
   // Fallback to hardcoded sample data
-  return FALLBACK_BTO_PROJECTS;
+  return JUNE_2026_FALLBACK_PROJECTS;
 }
 
 /**
@@ -272,7 +396,7 @@ const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
 
 export async function getBtoProjectsCached(): Promise<BtoProject[]> {
   const now = Date.now();
-  
+
   if (cachedProjects && now - cacheTime < CACHE_DURATION) {
     return cachedProjects;
   }
