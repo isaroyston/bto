@@ -1428,13 +1428,13 @@ th {
 }
 
 .flat-types {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   flex-wrap: nowrap;
   gap: 0.45rem;
-  width: 100%;
-  justify-content: center;
+  max-width: 100%;
   overflow-x: auto;
+  justify-content: flex-start;
   scrollbar-width: none;
 }
 
