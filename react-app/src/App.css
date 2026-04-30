@@ -1428,18 +1428,22 @@ th {
 }
 
 .flat-types {
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: nowrap;
-  gap: 0.45rem;
-  max-width: 100%;
+  width: 100%;
   overflow-x: auto;
-  justify-content: flex-start;
   scrollbar-width: none;
 }
 
 .flat-types::-webkit-scrollbar {
   display: none;
+}
+
+.flat-types-row {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0.45rem;
+  padding-bottom: 0.25rem;
+  white-space: nowrap;
 }
 
 .flat-type-btn {

@@ -1386,15 +1386,17 @@ function WelcomeScreen(props: {
                           <div className="project-name">{getBtoProjectDisplayName(project)}</div>
                           <div className="project-meta">{project.location}</div>
                           <div className="flat-types">
-                            {project.flatVariants.map((variant) => (
-                              <button
-                                key={variant.type}
-                                className="flat-type-btn"
-                                onClick={() => props.onSelectBtoProject(project.id, variant.type)}
-                              >
-                                {getFlatTypeLabel(variant.type)}
-                              </button>
-                            ))}
+                            <div className="flat-types-row">
+                              {project.flatVariants.map((variant) => (
+                                <button
+                                  key={variant.type}
+                                  className="flat-type-btn"
+                                  onClick={() => props.onSelectBtoProject(project.id, variant.type)}
+                                >
+                                  {getFlatTypeLabel(variant.type)}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       ))}
