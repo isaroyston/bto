@@ -608,6 +608,17 @@ function App() {
                 />
               </div>
 
+              <NoticeCard
+                tone="neutral"
+                title="Estimate inputs in use"
+                lines={[
+                  `Household income: ${toCurrency(result.household.grossMonthlyIncome)} / month`,
+                  `CPF OA balance: ${toCurrency(result.household.currentCpfOaBalance)} · Cash savings: ${toCurrency(result.household.currentCashSavings)}`,
+                  `Financing: ${formatFinancingLabel(formValues.financing)} · ${formatSchemeLabel(formValues.scheme)}`,
+                  `Loan profile: ${formatPercent(clampBetween(toNumber(formValues.ltvRatio), 0, 100) / 100)} LTV · ${formValues.loanTenureYears} years`,
+                ]}
+              />
+
               <div className="member-board">
                 {formValues.members.map((member, index) => {
                   const memberProjection = result.household.members.find(
@@ -1081,6 +1092,16 @@ function App() {
                   hint={result.pendingAmountCount === 1 ? "1 pending amount" : `${result.pendingAmountCount} pending amounts`}
                 />
               </div>
+
+              <NoticeCard
+                tone="neutral"
+                title="Not included in this estimate"
+                lines={[
+                  "Renovation, furnishing, and moving costs",
+                  "Home Protection Scheme (HPS) premium is member-specific",
+                  "Changes to income or CPF contribution rules after this baseline",
+                ]}
+              />
 
               <SegmentFilter activeFilter={segmentFilter} onChange={setSegmentFilter} />
 
