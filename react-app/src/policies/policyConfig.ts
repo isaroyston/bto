@@ -51,20 +51,26 @@ interface AllocationBand {
 export interface BtoFlatVariant {
   type: "2-room" | "3-room" | "4-room" | "5-room" | "executive";
   basePrice: number;
+  minPrice?: number;
+  maxPrice?: number;
   maxEhg: number;
   suggestedOccupants?: number; // e.g. 2-3 for 3-room
   suggestedTenureYears?: number; // e.g. 25 for first-timers
+  priceSource?: "data.gov.sg" | "local-csv" | "fallback" | "estimate";
+  priceNote?: string;
 }
 
 export interface BtoProject {
   id: string;
-  launchMonth: string; // YYYY-MM format
+  launchMonth: string; // YYYY-MM or FY label
   name: string;
   location: string;
   district: string;
   flatVariants: BtoFlatVariant[];
   suggestedFinancing?: "hdb" | "bank"; // Most common for this project
   suggestedScheme?: "normal" | "staggered" | "dia"; // Most accessible
+  dataSource?: "data.gov.sg" | "local-csv" | "fallback";
+  schemeSource?: "data.gov.sg" | "local-csv" | "fallback";
 }
 
 const CPF_CONTRIBUTION_BANDS_2026: ContributionBand[] = [
@@ -358,63 +364,6 @@ export const POLICY_CONFIG = {
       url: "local://EHG amount Couples and Families Aug 2024.pdf",
     },
   },
-  btoProjects: [
-    {
-      id: "belayar-2026-06",
-      launchMonth: "2026-06",
-      name: "Belayang Project",
-      location: "Ang Mo Kio",
-      district: "AMK",
-      suggestedFinancing: "hdb",
-      suggestedScheme: "normal",
-      flatVariants: [
-        { type: "3-room", basePrice: 520000, maxEhg: 85000, suggestedOccupants: 3, suggestedTenureYears: 25 },
-        { type: "4-room", basePrice: 650000, maxEhg: 110000, suggestedOccupants: 4, suggestedTenureYears: 25 },
-        { type: "5-room", basePrice: 780000, maxEhg: 130000, suggestedOccupants: 5, suggestedTenureYears: 30 },
-      ],
-    },
-    {
-      id: "riveria-2026-06",
-      launchMonth: "2026-06",
-      name: "Riveria Heights",
-      location: "Punggol",
-      district: "PG",
-      suggestedFinancing: "hdb",
-      suggestedScheme: "normal",
-      flatVariants: [
-        { type: "3-room", basePrice: 550000, maxEhg: 85000, suggestedOccupants: 3, suggestedTenureYears: 25 },
-        { type: "4-room", basePrice: 680000, maxEhg: 110000, suggestedOccupants: 4, suggestedTenureYears: 25 },
-        { type: "5-room", basePrice: 810000, maxEhg: 130000, suggestedOccupants: 5, suggestedTenureYears: 30 },
-      ],
-    },
-    {
-      id: "kovan-2026-08",
-      launchMonth: "2026-08",
-      name: "Kovan Towers",
-      location: "Hougang",
-      district: "HG",
-      suggestedFinancing: "hdb",
-      suggestedScheme: "staggered",
-      flatVariants: [
-        { type: "3-room", basePrice: 495000, maxEhg: 85000, suggestedOccupants: 3, suggestedTenureYears: 25 },
-        { type: "4-room", basePrice: 625000, maxEhg: 110000, suggestedOccupants: 4, suggestedTenureYears: 25 },
-        { type: "5-room", basePrice: 750000, maxEhg: 130000, suggestedOccupants: 5, suggestedTenureYears: 30 },
-      ],
-    },
-    {
-      id: "marina-2026-08",
-      launchMonth: "2026-08",
-      name: "Marina Square East",
-      location: "Marine Parade",
-      district: "MP",
-      suggestedFinancing: "hdb",
-      suggestedScheme: "normal",
-      flatVariants: [
-        { type: "4-room", basePrice: 720000, maxEhg: 110000, suggestedOccupants: 4, suggestedTenureYears: 25 },
-        { type: "5-room", basePrice: 860000, maxEhg: 130000, suggestedOccupants: 5, suggestedTenureYears: 30 },
-      ],
-    },
-  ],
 } as const;
 
 function pickContributionBand(ageYears: number): ContributionBand {
