@@ -22,24 +22,77 @@ import {
 import { parseLaunchMonthInput } from "./utils/date";
 import { clampNumber } from "./utils/format";
 import { buildPaymentTimeline } from "./utils/paymentTimeline";
+import {
+  createPlannerSnapshot,
+  downloadPlannerSnapshot,
+  loadPlannerSnapshot,
+  parsePlannerSnapshot,
+  savePlannerSnapshot,
+  type PlannerSnapshot,
+} from "./utils/planStorage";
 
 function App() {
-  const [activeTab, setActiveTab] = useState<TabKey>("overview");
-  const [combinedIncome, setCombinedIncome] = useState(6000);
-  const [flatPrice, setFlatPrice] = useState(650000);
-  const [flatType, setFlatType] = useState<FlatType>("4-room");
-  const [financing, setFinancing] = useState<FinancingType>("hdb");
-  const [scheme, setScheme] = useState<SchemeType>("normal");
-  const [yearFilter, setYearFilter] = useState("latest");
-  const [townQuery, setTownQuery] = useState("");
-  const [selectedBtoProjectId, setSelectedBtoProjectId] = useState<string | null>(null);
-  const [applicationMonth, setApplicationMonth] = useState(() => {
-    const today = new Date();
-    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(
-      2,
-      "0"
-    )}`;
+  const [initialPlanResult] = useState(() => {
+    try {
+      return {
+        snapshot: loadPlannerSnapshot(),
+        error: null,
+      };
+    } catch (error) {
+      return {
+        snapshot: null,
+        error: getErrorMessage(error),
+      };
+    }
   });
+  const initialPlan = initialPlanResult.snapshot;
+
+  const [activeTab, setActiveTab] = useState<TabKey>("overview");
+  const [combinedIncome, setCombinedIncome] = useState(
+    initialPlan?.combinedIncome ?? 6000
+  );
+  const [flatPrice, setFlatPrice] = useState(initialPlan?.flatPrice ?? 650000);
+  const [flatType, setFlatType] = useState<FlatType>(
+    initialPlan?.flatType ?? "4-room"
+  );
+  const [financing, setFinancing] = useState<FinancingType>(
+    initialPlan?.financing ?? "hdb"
+  );
+  const [scheme, setScheme] = useState<SchemeType>(
+    initialPlan?.scheme ?? "normal"
+  );
+  const [yearFilter, setYearFilter] = useState(
+    initialPlan?.yearFilter ?? "latest"
+  );
+  const [townQuery, setTownQuery] = useState(initialPlan?.townQuery ?? "");
+  const [selectedBtoProjectId, setSelectedBtoProjectId] = useState<string | null>(
+    initialPlan?.selectedBtoProjectId ?? null
+  );
+  const [planStorageStatus, setPlanStorageStatus] = useState(
+    initialPlanResult.error
+      ? "Saved plan could not be loaded"
+      : initialPlan
+        ? `Loaded saved plan from ${formatSavedAt(initialPlan.savedAt)}`
+        : "No saved plan in this browser"
+  );
+  const [planStorageError, setPlanStorageError] = useState<string | null>(
+    initialPlanResult.error
+  );
+  const [applicationMonth, setApplicationMonth] = useState(
+    initialPlan?.applicationMonth ?? getDefaultApplicationMonth()
+  );
+
+  const applyPlannerSnapshot = (snapshot: PlannerSnapshot) => {
+    setCombinedIncome(snapshot.combinedIncome);
+    setFlatPrice(snapshot.flatPrice);
+    setFlatType(snapshot.flatType);
+    setFinancing(snapshot.financing);
+    setScheme(snapshot.scheme);
+    setYearFilter(snapshot.yearFilter);
+    setTownQuery(snapshot.townQuery);
+    setSelectedBtoProjectId(snapshot.selectedBtoProjectId);
+    setApplicationMonth(snapshot.applicationMonth);
+  };
 
   const {
     projects: btoProjects,
@@ -137,6 +190,58 @@ function App() {
     setFlatPrice(clampNumber(value, FLAT_MIN, FLAT_MAX));
   };
 
+  const buildCurrentSnapshot = () =>
+    createPlannerSnapshot({
+      combinedIncome,
+      flatPrice,
+      flatType,
+      financing,
+      scheme,
+      yearFilter,
+      townQuery,
+      selectedBtoProjectId,
+      applicationMonth,
+    });
+
+  const handleSavePlan = () => {
+    try {
+      const snapshot = buildCurrentSnapshot();
+      savePlannerSnapshot(snapshot);
+      setPlanStorageStatus(`Saved locally at ${formatSavedAt(snapshot.savedAt)}`);
+      setPlanStorageError(null);
+    } catch (error) {
+      setPlanStorageStatus("Plan was not saved");
+      setPlanStorageError(getErrorMessage(error));
+    }
+  };
+
+  const handleDownloadPlan = () => {
+    try {
+      const snapshot = buildCurrentSnapshot();
+      savePlannerSnapshot(snapshot);
+      downloadPlannerSnapshot(snapshot);
+      setPlanStorageStatus(`Saved and downloaded at ${formatSavedAt(snapshot.savedAt)}`);
+      setPlanStorageError(null);
+    } catch (error) {
+      setPlanStorageStatus("Plan was not downloaded");
+      setPlanStorageError(getErrorMessage(error));
+    }
+  };
+
+  const handleImportPlan = async (file: File) => {
+    try {
+      const snapshot = parsePlannerSnapshot(await file.text());
+      applyPlannerSnapshot(snapshot);
+      savePlannerSnapshot(snapshot);
+      setActiveTab("plan");
+      setPlanStorageStatus(`Loaded ${file.name}`);
+      setPlanStorageError(null);
+    } catch (error) {
+      setPlanStorageStatus("Plan file was not loaded");
+      setPlanStorageError(getErrorMessage(error));
+    }
+  };
+
   const handleSelectBtoProject = (projectId: string) => {
     const project = btoProjects.find((candidate) => candidate.id === projectId);
     if (!project) return;
@@ -193,11 +298,16 @@ function App() {
             fireInsurance={fireInsurance}
             downpaymentNote={downpaymentRule.note}
             timeline={timeline}
+            planStorageStatus={planStorageStatus}
+            planStorageError={planStorageError}
             onFlatPriceChange={handleFlatPriceChange}
             onFlatTypeChange={setFlatType}
             onFinancingChange={setFinancing}
             onSchemeChange={setScheme}
             onOpenBtoRadar={() => setActiveTab("bto")}
+            onSavePlan={handleSavePlan}
+            onDownloadPlan={handleDownloadPlan}
+            onImportPlan={handleImportPlan}
           />
         )}
 
@@ -223,6 +333,27 @@ function App() {
       </main>
     </div>
   );
+}
+
+function formatSavedAt(value: string) {
+  return new Date(value).toLocaleString("en-SG", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getDefaultApplicationMonth() {
+  const today = new Date();
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(
+    2,
+    "0"
+  )}`;
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Unexpected storage error.";
 }
 
 export default App;

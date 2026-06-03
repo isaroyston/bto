@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { FLAT_MAX, FLAT_MIN, FLAT_TYPE_OPTIONS } from "../constants";
 import { POLICY_CONFIG } from "../policies/policyConfig";
 import type { BtoProject } from "../policies/policyConfig";
@@ -26,11 +27,16 @@ type PurchasePlanTabProps = {
   fireInsurance: number;
   downpaymentNote: string;
   timeline: TimelineItem[];
+  planStorageStatus: string;
+  planStorageError: string | null;
   onFlatPriceChange: (value: number) => void;
   onFlatTypeChange: (value: FlatType) => void;
   onFinancingChange: (value: FinancingType) => void;
   onSchemeChange: (value: SchemeType) => void;
   onOpenBtoRadar: () => void;
+  onSavePlan: () => void;
+  onDownloadPlan: () => void;
+  onImportPlan: (file: File) => void | Promise<void>;
 };
 
 const FINANCING_OPTIONS: { value: FinancingType; label: string }[] = [
@@ -48,10 +54,10 @@ const SCHEME_OPTIONS: { value: SchemeType; label: string }[] = [
 const MILESTONE_NODE_CLASSES = [
   "border-futuristic-teal bg-futuristic-teal text-hdb-bg",
   "border-heritage-navy bg-heritage-navy text-hdb-bg",
+  "border-heritage-navy bg-white text-heritage-navy",
   "border-electric-mint bg-electric-mint text-heritage-navy",
-  "border-futuristic-teal bg-futuristic-teal text-hdb-bg",
   "border-heritage-navy bg-heritage-navy text-hdb-bg",
-  "border-electric-mint bg-electric-mint text-heritage-navy",
+  "border-futuristic-teal bg-futuristic-teal text-hdb-bg",
 ];
 
 export function PurchasePlanTab({
@@ -69,11 +75,16 @@ export function PurchasePlanTab({
   fireInsurance,
   downpaymentNote,
   timeline,
+  planStorageStatus,
+  planStorageError,
   onFlatPriceChange,
   onFlatTypeChange,
   onFinancingChange,
   onSchemeChange,
   onOpenBtoRadar,
+  onSavePlan,
+  onDownloadPlan,
+  onImportPlan,
 }: PurchasePlanTabProps) {
   const immediateCostsTotal =
     POLICY_CONFIG.fees.applicationFee +
@@ -165,6 +176,14 @@ export function PurchasePlanTab({
             </div>
           </div>
         </div>
+
+        <PlanStoragePanel
+          status={planStorageStatus}
+          error={planStorageError}
+          onSave={onSavePlan}
+          onDownload={onDownloadPlan}
+          onImport={onImportPlan}
+        />
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
           <div className="panel space-y-5 p-6">
@@ -352,23 +371,26 @@ export function PurchasePlanTab({
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-hdb border border-heritage-navy/15">
             <table className="w-full min-w-[900px] border-collapse text-left text-sm">
-              <thead>
-                <tr className="border-b border-heritage-navy/10 text-xs text-warm-stone">
-                  <th className="w-16 py-3 pr-3 font-medium">Step</th>
-                  <th className="py-3 pr-3 font-medium">Milestone</th>
-                  <th className="py-3 pr-3 font-medium">Date</th>
-                  <th className="py-3 pr-3 font-medium">Payment item</th>
-                  <th className="py-3 pr-3 text-right font-medium">Payment</th>
-                  <th className="py-3 pr-3 text-right font-medium">CPF OA</th>
-                  <th className="py-3 text-right font-medium">Cash</th>
+              <thead className="bg-heritage-navy text-hdb-bg">
+                <tr className="text-xs">
+                  <th className="w-16 px-4 py-3 font-semibold">Step</th>
+                  <th className="px-4 py-3 font-semibold">Milestone</th>
+                  <th className="px-4 py-3 font-semibold">Date</th>
+                  <th className="px-4 py-3 font-semibold">Payment item</th>
+                  <th className="px-4 py-3 text-right font-semibold">Payment</th>
+                  <th className="px-4 py-3 text-right font-semibold">CPF OA</th>
+                  <th className="px-4 py-3 text-right font-semibold">Cash</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-heritage-navy/10">
               {timeline.map((item, index) => (
-                <tr key={item.label} className="align-top">
-                  <td className="py-4 pr-3">
+                <tr
+                  key={item.label}
+                  className="align-top odd:bg-white even:bg-hdb-bg/70 hover:bg-electric-mint/10"
+                >
+                  <td className="px-4 py-4">
                     <span
                       className={`flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold ${
                         MILESTONE_NODE_CLASSES[
@@ -379,29 +401,41 @@ export function PurchasePlanTab({
                       {index + 1}
                     </span>
                   </td>
-                  <td className="max-w-[300px] py-4 pr-3">
+                  <td className="max-w-[300px] px-4 py-4">
                     <p className="font-semibold text-heritage-navy">
                       {item.label}
                     </p>
-                    <p className="mt-1 text-xs leading-5 text-warm-stone">
+                    <p className="mt-1 text-xs leading-5 text-heritage-navy/70">
                       {item.note}
                       {item.payment?.note ? ` ${item.payment.note}` : ""}
                     </p>
                   </td>
-                  <td className="py-4 pr-3 font-semibold text-heritage-navy">
+                  <td className="px-4 py-4 font-semibold text-heritage-navy">
                     {item.date}
                   </td>
-                  <td className="py-4 pr-3 text-warm-stone">
+                  <td className="px-4 py-4 text-heritage-navy/75">
                     {item.payment?.label ?? "-"}
                   </td>
-                  <td className="py-4 pr-3 text-right font-semibold text-heritage-navy">
-                    {item.payment ? currency(item.payment.total) : "-"}
+                  <td className="px-4 py-4 text-right">
+                    {item.payment ? (
+                      <AmountPill tone="total" value={currency(item.payment.total)} />
+                    ) : (
+                      "-"
+                    )}
                   </td>
-                  <td className="py-4 pr-3 text-right text-warm-stone">
-                    {item.payment ? currency(item.payment.cpfOa) : "-"}
+                  <td className="px-4 py-4 text-right">
+                    {item.payment ? (
+                      <AmountPill tone="cpf" value={currency(item.payment.cpfOa)} />
+                    ) : (
+                      "-"
+                    )}
                   </td>
-                  <td className="py-4 text-right text-warm-stone">
-                    {item.payment ? currency(item.payment.cash) : "-"}
+                  <td className="px-4 py-4 text-right">
+                    {item.payment ? (
+                      <AmountPill tone="cash" value={currency(item.payment.cash)} />
+                    ) : (
+                      "-"
+                    )}
                   </td>
                 </tr>
               ))}
@@ -415,6 +449,87 @@ export function PurchasePlanTab({
         </div>
       </div>
     </section>
+  );
+}
+
+function PlanStoragePanel({
+  status,
+  error,
+  onSave,
+  onDownload,
+  onImport,
+}: {
+  status: string;
+  error: string | null;
+  onSave: () => void;
+  onDownload: () => void;
+  onImport: (file: File) => void | Promise<void>;
+}) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  return (
+    <div className="panel p-5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h3 className="text-base font-semibold text-heritage-navy">
+            Saved scenario
+          </h3>
+          <p className="mt-1 text-sm text-warm-stone">{status}</p>
+          {error && (
+            <p className="mt-1 text-sm font-medium text-red-700">{error}</p>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className="btn-primary" onClick={onSave}>
+            Save plan
+          </button>
+          <button type="button" className="btn-secondary" onClick={onDownload}>
+            Download JSON
+          </button>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            Load JSON
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0];
+              if (file) void onImport(file);
+              event.currentTarget.value = "";
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AmountPill({
+  tone,
+  value,
+}: {
+  tone: "total" | "cpf" | "cash";
+  value: string;
+}) {
+  const toneClass =
+    tone === "total"
+      ? "bg-heritage-navy text-hdb-bg"
+      : tone === "cpf"
+        ? "bg-futuristic-teal/15 text-heritage-navy ring-futuristic-teal/30"
+        : "bg-electric-mint/25 text-heritage-navy ring-electric-mint/40";
+
+  return (
+    <span
+      className={`inline-flex min-w-[96px] justify-center rounded-hdb px-2.5 py-1 text-xs font-semibold ring-1 ${toneClass}`}
+    >
+      {value}
+    </span>
   );
 }
 

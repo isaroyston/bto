@@ -7,6 +7,7 @@ React + TypeScript planner for Singapore HDB new-flat planning.
 - Downpayment, option fee, survey fee, and fire insurance scenarios.
 - Average payment timeline estimates from application through key collection.
 - Flat-size-specific BTO comparisons from the generated RecordBTO backfill.
+- Browser-local scenario saving with JSON import/export for tester handoff.
 
 ## Structure
 
@@ -27,6 +28,12 @@ npm.cmd run lint
 npm.cmd run build
 ```
 
+## Saved Scenarios
+
+The Purchase Plan page lets users save a scenario in browser `localStorage`,
+download it as JSON, and load a previously exported JSON file. No account or
+server storage is required.
+
 ## Refresh BTO Data
 
 ```bash
@@ -41,6 +48,39 @@ count reported by `https://recordbto.com/bto`.
 
 The root [`vercel.json`](vercel.json) is configured for a repository where the
 Vite app is inside `frontend`.
+
+### Vercel Dashboard
+
+1. Push this repository to GitHub.
+2. In Vercel, choose **Add New... > Project** and import the GitHub repository.
+3. Keep the project root as the repository root so Vercel reads
+   [`vercel.json`](vercel.json).
+4. Confirm these build settings:
+
+```text
+Framework Preset: Vite
+Install Command: npm install --prefix frontend
+Build Command: npm run build --prefix frontend
+Output Directory: frontend/dist
+```
+
+5. Deploy. After the first production deployment, share the production URL with
+   testers.
+
+### Before Sharing
+
+Run the production build locally:
+
+```bash
+npm.cmd run build
+```
+
+If BTO data needs to be refreshed before deployment, regenerate it instead of
+editing the generated JSON:
+
+```bash
+npm.cmd run data:recordbto
+```
 
 ## Policy Maintenance
 
