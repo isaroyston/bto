@@ -53,12 +53,6 @@ export const filterBtoProjects = (
   const filtered = projects.filter((project) => {
     const projectYear = getProjectYear(project);
     if (activeYear && projectYear !== activeYear) return false;
-    if (
-      flatType &&
-      !project.flatVariants.some((variant) => variant.type === flatType)
-    ) {
-      return false;
-    }
     if (!query) return true;
 
     const town = (project.location || project.district || "").toLowerCase();

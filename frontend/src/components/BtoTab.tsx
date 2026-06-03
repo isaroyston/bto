@@ -54,6 +54,13 @@ export function BtoTab({
     () => groupProjectsByLaunch(filteredProjects, selectedFlatType),
     [filteredProjects, selectedFlatType]
   );
+  const pricedProjectCount = useMemo(
+    () =>
+      filteredProjects.filter((project) =>
+        project.flatVariants.some((variant) => variant.type === selectedFlatType)
+      ).length,
+    [filteredProjects, selectedFlatType]
+  );
   const selectedLaunch =
     launchGroups.find((group) => group.key === activeLaunch) ?? launchGroups[0];
 
@@ -97,7 +104,7 @@ export function BtoTab({
           <div className="panel grid gap-4 p-4 lg:grid-cols-[180px_180px_minmax(220px,1fr)_auto] lg:items-end">
             <div>
               <label className="field-label" htmlFor="flat-type-filter">
-                Flat size
+                Price view
               </label>
               <select
                 id="flat-type-filter"
@@ -164,8 +171,8 @@ export function BtoTab({
               value={launchGroups.length}
             />
             <DecisionMetric
-              label={`${selectedFlatType} prices found`}
-              value={filteredProjects.length}
+              label={`${selectedFlatType} price records`}
+              value={pricedProjectCount}
             />
             <DecisionMetric
               label="Projects loaded"
@@ -175,7 +182,7 @@ export function BtoTab({
 
           {launchGroups.length === 0 ? (
             <div className="panel p-5 text-sm text-warm-stone">
-              No projects with {selectedFlatType} pricing match the current filters.
+              No projects match the current filters.
             </div>
           ) : (
             <div className="grid gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
