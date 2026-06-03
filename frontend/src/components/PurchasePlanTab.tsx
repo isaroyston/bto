@@ -51,14 +51,8 @@ const SCHEME_OPTIONS: { value: SchemeType; label: string }[] = [
   { value: "dia", label: "DIA" },
 ];
 
-const MILESTONE_NODE_CLASSES = [
-  "border-futuristic-teal bg-futuristic-teal text-hdb-bg",
-  "border-heritage-navy bg-heritage-navy text-hdb-bg",
-  "border-heritage-navy bg-white text-heritage-navy",
-  "border-electric-mint bg-electric-mint text-heritage-navy",
-  "border-heritage-navy bg-heritage-navy text-hdb-bg",
-  "border-futuristic-teal bg-futuristic-teal text-hdb-bg",
-];
+const MILESTONE_NODE_CLASS =
+  "border-futuristic-teal bg-white text-heritage-navy shadow-[0_0_0_4px_oklch(var(--color-electric-mint)_/_0.22)]";
 
 export function PurchasePlanTab({
   selectedProject,
@@ -392,11 +386,7 @@ export function PurchasePlanTab({
                 >
                   <td className="px-4 py-4">
                     <span
-                      className={`flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold ${
-                        MILESTONE_NODE_CLASSES[
-                          index % MILESTONE_NODE_CLASSES.length
-                        ]
-                      }`}
+                      className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-extrabold ${MILESTONE_NODE_CLASS}`}
                     >
                       {index + 1}
                     </span>
