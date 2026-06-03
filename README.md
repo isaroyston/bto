@@ -67,6 +67,11 @@ Output Directory: frontend/dist
 5. Deploy. After the first production deployment, share the production URL with
    testers.
 
+If a deployment URL returns `401 Unauthorized`, Vercel Deployment Protection is
+enabled for the project or team. In Vercel, open the project settings and set
+Deployment Protection to **None** for deployments you want public testers to
+open.
+
 ### Before Sharing
 
 Run the production build locally:
