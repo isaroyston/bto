@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "installCommand": "npm install --prefix react-app",
-  "buildCommand": "npm run build --prefix react-app",
-  "outputDirectory": "react-app/dist",
+  "installCommand": "npm install --prefix frontend",
+  "buildCommand": "npm run build --prefix frontend",
+  "outputDirectory": "frontend/dist",
   "rewrites": [
     {
       "source": "/(.*)",

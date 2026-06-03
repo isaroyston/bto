@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-hdb-bg: 97.5% 0.006 95;
+    --color-heritage-navy: 25% 0.034 247;
+    --color-warm-stone: 49% 0.012 85;
+    --color-futuristic-teal: 50% 0.078 180;
+    --color-electric-mint: 61% 0.09 170;
+  }
+
+  html {
+    font-size: 16px;
+  }
+
+  body {
+    @apply bg-hdb-bg font-sans text-heritage-navy antialiased;
+  }
+
+  button,
+  input,
+  select {
+    @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-futuristic-teal;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-hdb border border-heritage-navy/10 bg-white shadow-card;
+  }
+
+  .metric-card {
+    @apply rounded-hdb border bg-white p-4;
+  }
+
+  .bento-grid {
+    @apply grid gap-4 md:grid-cols-3 lg:grid-cols-4;
+  }
+
+  .field-label {
+    @apply text-sm font-medium text-heritage-navy;
+  }
+
+  .control {
+    @apply rounded-hdb border border-heritage-navy/15 bg-white px-3 py-2 text-sm text-heritage-navy shadow-none transition-colors hover:border-heritage-navy/25;
+  }
+
+  .interactive-slider {
+    @apply h-1.5 w-full appearance-none rounded-full bg-heritage-navy/15 outline-none;
+  }
+
+  .interactive-slider::-webkit-slider-thumb {
+    @apply h-4 w-4 cursor-pointer appearance-none rounded-full border border-white bg-futuristic-teal shadow-card transition-colors hover:bg-electric-mint;
+  }
+
+  .btn-primary {
+    @apply rounded-hdb bg-heritage-navy px-4 py-2 text-sm font-medium text-hdb-bg transition-colors hover:bg-heritage-navy/90 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply rounded-hdb border border-heritage-navy/15 bg-white px-4 py-2 text-sm font-medium text-heritage-navy transition-colors hover:bg-heritage-navy/5 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-accent {
+    @apply rounded-hdb bg-futuristic-teal px-4 py-2 text-sm font-medium text-hdb-bg transition-colors hover:bg-electric-mint disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .bto-reveal {
+    animation: bto-reveal 180ms ease-out;
+  }
+}
+
+@keyframes bto-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

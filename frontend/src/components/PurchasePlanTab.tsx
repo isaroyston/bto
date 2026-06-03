@@ -1,0 +1,432 @@
+import { FLAT_MAX, FLAT_MIN, FLAT_TYPE_OPTIONS } from "../constants";
+import { POLICY_CONFIG } from "../policies/policyConfig";
+import type { BtoProject } from "../policies/policyConfig";
+import { FactItem } from "./FactItem";
+import { NumberSliderField } from "./NumberSliderField";
+import type {
+  FinancingType,
+  FlatType,
+  SchemeType,
+  TimelineItem,
+} from "../types";
+import { currency } from "../utils/format";
+
+type PurchasePlanTabProps = {
+  selectedProject: BtoProject | null;
+  loanAmount: number;
+  flatPrice: number;
+  flatType: FlatType;
+  financing: FinancingType;
+  scheme: SchemeType;
+  signingAmount: number;
+  keyAmount: number;
+  minCashSigning: number;
+  optionFee: number;
+  surveyFee: number;
+  fireInsurance: number;
+  downpaymentNote: string;
+  timeline: TimelineItem[];
+  onFlatPriceChange: (value: number) => void;
+  onFlatTypeChange: (value: FlatType) => void;
+  onFinancingChange: (value: FinancingType) => void;
+  onSchemeChange: (value: SchemeType) => void;
+  onOpenBtoRadar: () => void;
+};
+
+const FINANCING_OPTIONS: { value: FinancingType; label: string }[] = [
+  { value: "hdb", label: "HDB Loan" },
+  { value: "bank", label: "Bank Loan" },
+  { value: "none", label: "No Loan" },
+];
+
+const SCHEME_OPTIONS: { value: SchemeType; label: string }[] = [
+  { value: "normal", label: "Normal" },
+  { value: "staggered", label: "Staggered" },
+  { value: "dia", label: "DIA" },
+];
+
+const MILESTONE_NODE_CLASSES = [
+  "border-futuristic-teal bg-futuristic-teal text-hdb-bg",
+  "border-heritage-navy bg-heritage-navy text-hdb-bg",
+  "border-electric-mint bg-electric-mint text-heritage-navy",
+  "border-futuristic-teal bg-futuristic-teal text-hdb-bg",
+  "border-heritage-navy bg-heritage-navy text-hdb-bg",
+  "border-electric-mint bg-electric-mint text-heritage-navy",
+];
+
+export function PurchasePlanTab({
+  selectedProject,
+  loanAmount,
+  flatPrice,
+  flatType,
+  financing,
+  scheme,
+  signingAmount,
+  keyAmount,
+  minCashSigning,
+  optionFee,
+  surveyFee,
+  fireInsurance,
+  downpaymentNote,
+  timeline,
+  onFlatPriceChange,
+  onFlatTypeChange,
+  onFinancingChange,
+  onSchemeChange,
+  onOpenBtoRadar,
+}: PurchasePlanTabProps) {
+  const immediateCostsTotal =
+    POLICY_CONFIG.fees.applicationFee +
+    optionFee +
+    surveyFee +
+    fireInsurance +
+    POLICY_CONFIG.fees.registrationFeeLeaseEscrow;
+  const downpaymentTotal = signingAmount + keyAmount;
+  const totalPlannedCosts = downpaymentTotal + immediateCostsTotal;
+
+  return (
+    <section className="space-y-8">
+      <header className="space-y-3">
+        <h2 className="text-2xl font-semibold text-heritage-navy">
+          Purchase plan
+        </h2>
+        <p className="max-w-2xl text-sm leading-6 text-warm-stone">
+          Select a BTO project, then review the flat price, expected completion,
+          and estimated payment milestones in one place.
+        </p>
+      </header>
+
+      <div className="space-y-4">
+        <div className="panel space-y-4 p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              {selectedProject ? (
+                <div>
+                  <p className="text-sm font-medium text-warm-stone">
+                    Selected BTO project
+                  </p>
+                  <h3 className="mt-1 text-xl font-semibold text-heritage-navy">
+                    {selectedProject.name}
+                  </h3>
+                  <p className="mt-1 text-sm text-warm-stone">
+                    {selectedProject.location}, {selectedProject.launchMonth}
+                  </p>
+                  <div className="mt-5 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                    <FactItem
+                      label="Selected flat"
+                      value={`${flatType}, ${currency(flatPrice)}`}
+                    />
+                    <FactItem
+                      label="Expected TOP"
+                      value={selectedProject.expectedTop ?? "Not listed"}
+                    />
+                    <FactItem
+                      label="Units"
+                      value={
+                        selectedProject.totalUnits?.toLocaleString("en-SG") ??
+                        "Not listed"
+                      }
+                    />
+                    <FactItem
+                      label="Nearest MRT"
+                      value={selectedProject.nearestMrt ?? "Not listed"}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-sm font-medium text-warm-stone">
+                    Selected BTO project
+                  </p>
+                  <h3 className="mt-1 text-xl font-semibold text-heritage-navy">
+                    No project selected
+                  </h3>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-warm-stone">
+                    Choose one from BTO Radar to prefill flat type, price,
+                    launch month, and expected completion details.
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="flex shrink-0 gap-2">
+              {selectedProject?.sourceUrl && (
+                <a
+                  href={selectedProject.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-secondary"
+                >
+                  View source
+                </a>
+              )}
+              <button type="button" className="btn-primary" onClick={onOpenBtoRadar}>
+                {selectedProject ? "Change project" : "Choose project"}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+          <div className="panel space-y-5 p-6">
+            <h3 className="text-base font-semibold text-heritage-navy">
+              Scenario inputs
+            </h3>
+            <NumberSliderField
+              id="flat-price"
+              label="Target flat price"
+              min={FLAT_MIN}
+              max={FLAT_MAX}
+              step={5000}
+              value={flatPrice}
+              onChange={onFlatPriceChange}
+              minLabel={currency(FLAT_MIN)}
+              maxLabel={currency(FLAT_MAX)}
+            />
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-2">
+                <label className="field-label" htmlFor="flat-type">
+                  Flat type
+                </label>
+                <select
+                  id="flat-type"
+                  value={flatType}
+                  onChange={(event) =>
+                    onFlatTypeChange(event.target.value as FlatType)
+                  }
+                  className="control"
+                >
+                  {FLAT_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid gap-2">
+                <label className="field-label" htmlFor="financing-type">
+                  Financing type
+                </label>
+                <select
+                  id="financing-type"
+                  value={financing}
+                  onChange={(event) =>
+                    onFinancingChange(event.target.value as FinancingType)
+                  }
+                  className="control"
+                >
+                  {FINANCING_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid gap-2">
+                <label className="field-label" htmlFor="payment-scheme">
+                  Payment scheme
+                </label>
+                <select
+                  id="payment-scheme"
+                  value={scheme}
+                  onChange={(event) =>
+                    onSchemeChange(event.target.value as SchemeType)
+                  }
+                  className="control"
+                >
+                  {SCHEME_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="panel flex flex-col justify-between gap-5 p-6">
+            <div>
+              <h3 className="text-base font-semibold text-heritage-navy">
+                Estimated loan value
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-warm-stone">
+                From the household income used in Overview.
+              </p>
+            </div>
+            <div>
+              <p className="text-3xl font-semibold text-heritage-navy">
+                {currency(loanAmount)}
+              </p>
+              <div className="mt-4 space-y-2 text-sm">
+                <CostRow label="Current financing" value={formatFinancing(financing)} />
+                <CostRow label="Flat price" value={currency(flatPrice)} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="panel space-y-4 p-6">
+            <h3 className="text-base font-semibold text-heritage-navy">
+              Required Downpayment
+            </h3>
+            <div className="space-y-3">
+              <CostRow label="Signing" value={currency(signingAmount)} />
+              <CostRow label="Key collection" value={currency(keyAmount)} />
+              <CostRow
+                label="Minimum cash at signing"
+                value={currency(minCashSigning)}
+              />
+            </div>
+            <div className="rounded-hdb border border-heritage-navy/10 bg-heritage-navy/5 p-3 text-xs text-warm-stone">
+              {downpaymentNote}
+            </div>
+          </div>
+
+          <div className="panel space-y-4 p-6">
+            <h3 className="text-base font-semibold text-heritage-navy">
+              Immediate Costs
+            </h3>
+            <div className="space-y-2 text-sm">
+              {[
+                ["Application fee", POLICY_CONFIG.fees.applicationFee],
+                [`Option fee (${flatType})`, optionFee],
+                [`Survey fee (${flatType})`, surveyFee],
+                [`Fire insurance (${flatType})`, fireInsurance],
+                ["Registration fee", POLICY_CONFIG.fees.registrationFeeLeaseEscrow],
+              ].map(([label, amount]) => (
+                <CostRow
+                  key={label}
+                  label={String(label)}
+                  value={currency(Number(amount))}
+                />
+              ))}
+              <CostRow
+                label="GST rate"
+                value={`${(POLICY_CONFIG.fees.gstRate * 100).toFixed(0)}%`}
+              />
+            </div>
+            <div className="text-xs text-warm-stone">
+              Source: {POLICY_CONFIG.sources.processOverview.label}
+            </div>
+          </div>
+
+          <div className="panel space-y-4 p-6">
+            <h3 className="text-base font-semibold text-heritage-navy">
+              Total costs
+            </h3>
+            <p className="text-3xl font-semibold text-heritage-navy">
+              {currency(totalPlannedCosts)}
+            </p>
+            <div className="space-y-3 text-sm">
+              <CostRow
+                label="Required downpayment"
+                value={currency(downpaymentTotal)}
+              />
+              <CostRow
+                label="Immediate fees"
+                value={currency(immediateCostsTotal)}
+              />
+            </div>
+            <p className="text-xs leading-5 text-warm-stone">
+              Sum of listed downpayment and fee items. Loan balance and CPF OA
+              availability are not deducted here.
+            </p>
+          </div>
+        </div>
+
+        <div className="panel space-y-4 p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h3 className="text-base font-semibold text-heritage-navy">
+                Key milestones from application to keys{" "}
+                <span className="font-normal text-warm-stone">(estimated)</span>
+              </h3>
+              <p className="mt-1 text-sm text-warm-stone">
+                Based on default BTO offsets, not confirmed appointment dates.
+              </p>
+            </div>
+            <div className="rounded-hdb border border-heritage-navy/10 bg-white px-3 py-2 text-sm text-warm-stone">
+              {selectedProject
+                ? `Starts from ${selectedProject.launchMonth}`
+                : "Choose a project to set the launch month"}
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[900px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-heritage-navy/10 text-xs text-warm-stone">
+                  <th className="w-16 py-3 pr-3 font-medium">Step</th>
+                  <th className="py-3 pr-3 font-medium">Milestone</th>
+                  <th className="py-3 pr-3 font-medium">Date</th>
+                  <th className="py-3 pr-3 font-medium">Payment item</th>
+                  <th className="py-3 pr-3 text-right font-medium">Payment</th>
+                  <th className="py-3 pr-3 text-right font-medium">CPF OA</th>
+                  <th className="py-3 text-right font-medium">Cash</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-heritage-navy/10">
+              {timeline.map((item, index) => (
+                <tr key={item.label} className="align-top">
+                  <td className="py-4 pr-3">
+                    <span
+                      className={`flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold ${
+                        MILESTONE_NODE_CLASSES[
+                          index % MILESTONE_NODE_CLASSES.length
+                        ]
+                      }`}
+                    >
+                      {index + 1}
+                    </span>
+                  </td>
+                  <td className="max-w-[300px] py-4 pr-3">
+                    <p className="font-semibold text-heritage-navy">
+                      {item.label}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-warm-stone">
+                      {item.note}
+                      {item.payment?.note ? ` ${item.payment.note}` : ""}
+                    </p>
+                  </td>
+                  <td className="py-4 pr-3 font-semibold text-heritage-navy">
+                    {item.date}
+                  </td>
+                  <td className="py-4 pr-3 text-warm-stone">
+                    {item.payment?.label ?? "-"}
+                  </td>
+                  <td className="py-4 pr-3 text-right font-semibold text-heritage-navy">
+                    {item.payment ? currency(item.payment.total) : "-"}
+                  </td>
+                  <td className="py-4 pr-3 text-right text-warm-stone">
+                    {item.payment ? currency(item.payment.cpfOa) : "-"}
+                  </td>
+                  <td className="py-4 text-right text-warm-stone">
+                    {item.payment ? currency(item.payment.cash) : "-"}
+                  </td>
+                </tr>
+              ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-warm-stone">
+            CPF OA usage depends on available OA balance and eligibility. Treat
+            the split as an indicative guide.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function formatFinancing(value: FinancingType) {
+  return FINANCING_OPTIONS.find((option) => option.value === value)?.label ?? value;
+}
+
+function CostRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <span className="text-warm-stone">{label}</span>
+      <span className="font-semibold text-heritage-navy">{value}</span>
+    </div>
+  );
+}
