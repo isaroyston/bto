@@ -27,6 +27,7 @@ export type PlannerSnapshot = {
   townQuery: string;
   selectedBtoProjectId: string | null;
   applicationMonth: string;
+  completedMilestones: string[];
 };
 
 type PlannerSnapshotInput = Omit<PlannerSnapshot, "version" | "savedAt">;
@@ -104,6 +105,7 @@ export function parsePlannerSnapshot(raw: string): PlannerSnapshot {
         ? parsed.selectedBtoProjectId
         : null,
     applicationMonth: parseApplicationMonth(parsed.applicationMonth),
+    completedMilestones: parseStringArray(parsed.completedMilestones),
   };
 }
 
@@ -158,6 +160,14 @@ function parseBoundedNumber(
   }
 
   return clampNumber(parsed, min, max);
+}
+
+function parseStringArray(value: unknown) {
+  if (!Array.isArray(value)) return [];
+
+  return value.filter(
+    (item): item is string => typeof item === "string" && item.length > 0
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

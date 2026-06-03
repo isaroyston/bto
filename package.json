@@ -8,6 +8,8 @@
     "lint": "npm --prefix frontend run lint",
     "preview": "npm --prefix frontend run preview --",
     "data:recordbto": "node backend/scripts/backfill-recordbto.mjs",
-    "data:refresh": "node backend/scripts/backfill-recordbto.mjs"
+    "data:btohq": "node backend/scripts/backfill-btohq.mjs",
+    "data:merge-bto": "node backend/scripts/merge-bto-datasets.mjs",
+    "data:refresh": "npm run data:recordbto && npm run data:btohq && npm run data:merge-bto"
   }
 }

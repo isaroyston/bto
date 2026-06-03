@@ -24,11 +24,8 @@ import { clampNumber } from "./utils/format";
 import { buildPaymentTimeline } from "./utils/paymentTimeline";
 import {
   createPlannerSnapshot,
-  downloadPlannerSnapshot,
   loadPlannerSnapshot,
-  parsePlannerSnapshot,
   savePlannerSnapshot,
-  type PlannerSnapshot,
 } from "./utils/planStorage";
 
 function App() {
@@ -47,7 +44,7 @@ function App() {
   });
   const initialPlan = initialPlanResult.snapshot;
 
-  const [activeTab, setActiveTab] = useState<TabKey>("overview");
+  const [activeTab, setActiveTabState] = useState<TabKey>(getInitialTab());
   const [combinedIncome, setCombinedIncome] = useState(
     initialPlan?.combinedIncome ?? 6000
   );
@@ -81,18 +78,9 @@ function App() {
   const [applicationMonth, setApplicationMonth] = useState(
     initialPlan?.applicationMonth ?? getDefaultApplicationMonth()
   );
-
-  const applyPlannerSnapshot = (snapshot: PlannerSnapshot) => {
-    setCombinedIncome(snapshot.combinedIncome);
-    setFlatPrice(snapshot.flatPrice);
-    setFlatType(snapshot.flatType);
-    setFinancing(snapshot.financing);
-    setScheme(snapshot.scheme);
-    setYearFilter(snapshot.yearFilter);
-    setTownQuery(snapshot.townQuery);
-    setSelectedBtoProjectId(snapshot.selectedBtoProjectId);
-    setApplicationMonth(snapshot.applicationMonth);
-  };
+  const [completedMilestones, setCompletedMilestones] = useState<string[]>(
+    initialPlan?.completedMilestones ?? []
+  );
 
   const {
     projects: btoProjects,
@@ -142,6 +130,10 @@ function App() {
       surveyFee,
     ]
   );
+  const activeCompletedMilestones = useMemo(() => {
+    const timelineLabels = new Set(timeline.map((item) => item.label));
+    return completedMilestones.filter((label) => timelineLabels.has(label));
+  }, [completedMilestones, timeline]);
 
   const availableYears = useMemo(
     () => getAvailableYears(btoProjects),
@@ -162,6 +154,19 @@ function App() {
         : null,
     [btoProjects, selectedBtoProjectId]
   );
+
+  const setActiveTab = (tab: TabKey) => {
+    setActiveTabState(tab);
+
+    const url = new URL(window.location.href);
+    if (tab === "overview") {
+      url.searchParams.delete("tab");
+    } else {
+      url.searchParams.set("tab", tab);
+    }
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  };
+
   const handleYearFilterChange = (value: string) => {
     setYearFilter(value);
   };
@@ -190,6 +195,14 @@ function App() {
     setFlatPrice(clampNumber(value, FLAT_MIN, FLAT_MAX));
   };
 
+  const handleToggleMilestoneComplete = (label: string) => {
+    setCompletedMilestones((current) =>
+      current.includes(label)
+        ? current.filter((item) => item !== label)
+        : [...current, label]
+    );
+  };
+
   const buildCurrentSnapshot = () =>
     createPlannerSnapshot({
       combinedIncome,
@@ -201,6 +214,7 @@ function App() {
       townQuery,
       selectedBtoProjectId,
       applicationMonth,
+      completedMilestones: activeCompletedMilestones,
     });
 
   const handleSavePlan = () => {
@@ -215,33 +229,6 @@ function App() {
     }
   };
 
-  const handleDownloadPlan = () => {
-    try {
-      const snapshot = buildCurrentSnapshot();
-      savePlannerSnapshot(snapshot);
-      downloadPlannerSnapshot(snapshot);
-      setPlanStorageStatus(`Saved and downloaded at ${formatSavedAt(snapshot.savedAt)}`);
-      setPlanStorageError(null);
-    } catch (error) {
-      setPlanStorageStatus("Plan was not downloaded");
-      setPlanStorageError(getErrorMessage(error));
-    }
-  };
-
-  const handleImportPlan = async (file: File) => {
-    try {
-      const snapshot = parsePlannerSnapshot(await file.text());
-      applyPlannerSnapshot(snapshot);
-      savePlannerSnapshot(snapshot);
-      setActiveTab("plan");
-      setPlanStorageStatus(`Loaded ${file.name}`);
-      setPlanStorageError(null);
-    } catch (error) {
-      setPlanStorageStatus("Plan file was not loaded");
-      setPlanStorageError(getErrorMessage(error));
-    }
-  };
-
   const handleSelectBtoProject = (projectId: string) => {
     const project = btoProjects.find((candidate) => candidate.id === projectId);
     if (!project) return;
@@ -251,6 +238,7 @@ function App() {
       project.flatVariants[0];
 
     setSelectedBtoProjectId(project.id);
+    setCompletedMilestones([]);
 
     if (preferredVariant) {
       setFlatType(preferredVariant.type);
@@ -267,7 +255,7 @@ function App() {
     <div className="min-h-screen bg-hdb-bg text-heritage-navy">
       <Navigation activeTab={activeTab} onSelectTab={setActiveTab} />
 
-      <main className="mx-auto max-w-[1360px] space-y-8 px-5 pb-14 pt-24 md:px-8 lg:px-10">
+      <main className="mx-auto w-full max-w-[1360px] min-w-0 space-y-8 overflow-x-hidden px-5 pb-14 pt-24 md:px-8 lg:px-10">
         {activeTab === "overview" && (
           <OverviewTab
             combinedIncome={combinedIncome}
@@ -277,7 +265,8 @@ function App() {
             selectedProject={selectedBtoProject}
             flatType={flatType}
             flatPrice={flatPrice}
-            onIncomeChange={handleIncomeChange}
+            completedMilestoneCount={activeCompletedMilestones.length}
+            totalMilestoneCount={timeline.length}
             onSelectTab={setActiveTab}
           />
         )}
@@ -285,7 +274,9 @@ function App() {
         {activeTab === "plan" && (
           <PurchasePlanTab
             selectedProject={selectedBtoProject}
+            combinedIncome={combinedIncome}
             loanAmount={loanAmount}
+            ehgGrant={ehgGrant}
             flatPrice={flatPrice}
             flatType={flatType}
             financing={financing}
@@ -298,16 +289,17 @@ function App() {
             fireInsurance={fireInsurance}
             downpaymentNote={downpaymentRule.note}
             timeline={timeline}
+            completedMilestones={activeCompletedMilestones}
             planStorageStatus={planStorageStatus}
             planStorageError={planStorageError}
+            onIncomeChange={handleIncomeChange}
             onFlatPriceChange={handleFlatPriceChange}
             onFlatTypeChange={setFlatType}
             onFinancingChange={setFinancing}
             onSchemeChange={setScheme}
             onOpenBtoRadar={() => setActiveTab("bto")}
             onSavePlan={handleSavePlan}
-            onDownloadPlan={handleDownloadPlan}
-            onImportPlan={handleImportPlan}
+            onToggleMilestoneComplete={handleToggleMilestoneComplete}
           />
         )}
 
@@ -350,6 +342,11 @@ function getDefaultApplicationMonth() {
     2,
     "0"
   )}`;
+}
+
+function getInitialTab(): TabKey {
+  const tab = new URLSearchParams(window.location.search).get("tab");
+  return tab === "plan" || tab === "bto" || tab === "overview" ? tab : "overview";
 }
 
 function getErrorMessage(error: unknown) {

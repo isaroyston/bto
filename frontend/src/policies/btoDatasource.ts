@@ -1,9 +1,9 @@
 import type { BtoProject } from "./policyConfig";
 
-const RECORDBTO_PROJECTS_JSON = "/data/recordbto/projects.json";
+const BTO_PROJECTS_JSON = "/data/bto/projects.json";
 const CACHE_DURATION = 60 * 60 * 1000;
 
-type RecordBtoPayload = {
+type BtoPayload = {
   generatedAt?: string;
   projectCount?: number;
   projects?: BtoProject[];
@@ -13,7 +13,7 @@ let cachedProjects: BtoProject[] | null = null;
 let cacheTime = 0;
 
 export async function fetchBtoProjects(): Promise<BtoProject[]> {
-  return fetchFromRecordBtoJson();
+  return fetchFromBtoJson();
 }
 
 export async function getBtoProjectsCached(): Promise<BtoProject[]> {
@@ -31,20 +31,20 @@ export async function getBtoProjectsCached(): Promise<BtoProject[]> {
   return cachedProjects;
 }
 
-async function fetchFromRecordBtoJson(): Promise<BtoProject[]> {
-  const response = await fetch(RECORDBTO_PROJECTS_JSON);
+async function fetchFromBtoJson(): Promise<BtoProject[]> {
+  const response = await fetch(BTO_PROJECTS_JSON);
   if (!response.ok) {
-    throw new Error(`Unable to load RecordBTO dataset: ${response.status}`);
+    throw new Error(`Unable to load BTO dataset: ${response.status}`);
   }
 
-  const payload = (await response.json()) as RecordBtoPayload;
+  const payload = (await response.json()) as BtoPayload;
   if (!Array.isArray(payload.projects)) {
-    throw new Error("RecordBTO dataset is missing the projects array.");
+    throw new Error("BTO dataset is missing the projects array.");
   }
 
   const projects = payload.projects.filter(isValidBtoProject);
   if (projects.length === 0) {
-    throw new Error("RecordBTO dataset did not contain any valid projects.");
+    throw new Error("BTO dataset did not contain any valid projects.");
   }
 
   return projects;

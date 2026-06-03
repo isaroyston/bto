@@ -1,8 +1,12 @@
-import { useRef } from "react";
-import { FLAT_MAX, FLAT_MIN, FLAT_TYPE_OPTIONS } from "../constants";
+import {
+  FLAT_MAX,
+  FLAT_MIN,
+  FLAT_TYPE_OPTIONS,
+  INCOME_MAX,
+  INCOME_MIN,
+} from "../constants";
 import { POLICY_CONFIG } from "../policies/policyConfig";
 import type { BtoProject } from "../policies/policyConfig";
-import { FactItem } from "./FactItem";
 import { NumberSliderField } from "./NumberSliderField";
 import type {
   FinancingType,
@@ -14,7 +18,9 @@ import { currency } from "../utils/format";
 
 type PurchasePlanTabProps = {
   selectedProject: BtoProject | null;
+  combinedIncome: number;
   loanAmount: number;
+  ehgGrant: number;
   flatPrice: number;
   flatType: FlatType;
   financing: FinancingType;
@@ -27,16 +33,17 @@ type PurchasePlanTabProps = {
   fireInsurance: number;
   downpaymentNote: string;
   timeline: TimelineItem[];
+  completedMilestones: string[];
   planStorageStatus: string;
   planStorageError: string | null;
+  onIncomeChange: (value: number) => void;
   onFlatPriceChange: (value: number) => void;
   onFlatTypeChange: (value: FlatType) => void;
   onFinancingChange: (value: FinancingType) => void;
   onSchemeChange: (value: SchemeType) => void;
   onOpenBtoRadar: () => void;
   onSavePlan: () => void;
-  onDownloadPlan: () => void;
-  onImportPlan: (file: File) => void | Promise<void>;
+  onToggleMilestoneComplete: (label: string) => void;
 };
 
 const FINANCING_OPTIONS: { value: FinancingType; label: string }[] = [
@@ -51,12 +58,11 @@ const SCHEME_OPTIONS: { value: SchemeType; label: string }[] = [
   { value: "dia", label: "DIA" },
 ];
 
-const MILESTONE_NODE_CLASS =
-  "border-futuristic-teal bg-white text-heritage-navy shadow-[0_0_0_4px_oklch(var(--color-electric-mint)_/_0.22)]";
-
 export function PurchasePlanTab({
   selectedProject,
+  combinedIncome,
   loanAmount,
+  ehgGrant,
   flatPrice,
   flatType,
   financing,
@@ -69,16 +75,17 @@ export function PurchasePlanTab({
   fireInsurance,
   downpaymentNote,
   timeline,
+  completedMilestones,
   planStorageStatus,
   planStorageError,
+  onIncomeChange,
   onFlatPriceChange,
   onFlatTypeChange,
   onFinancingChange,
   onSchemeChange,
   onOpenBtoRadar,
   onSavePlan,
-  onDownloadPlan,
-  onImportPlan,
+  onToggleMilestoneComplete,
 }: PurchasePlanTabProps) {
   const immediateCostsTotal =
     POLICY_CONFIG.fees.applicationFee +
@@ -101,437 +108,607 @@ export function PurchasePlanTab({
         </p>
       </header>
 
-      <div className="space-y-4">
-        <div className="panel space-y-4 p-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-            <div>
-              {selectedProject ? (
-                <div>
-                  <p className="text-sm font-medium text-warm-stone">
-                    Selected BTO project
-                  </p>
-                  <h3 className="mt-1 text-xl font-semibold text-heritage-navy">
-                    {selectedProject.name}
-                  </h3>
-                  <p className="mt-1 text-sm text-warm-stone">
-                    {selectedProject.location}, {selectedProject.launchMonth}
-                  </p>
-                  <div className="mt-5 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                    <FactItem
-                      label="Selected flat"
-                      value={`${flatType}, ${currency(flatPrice)}`}
-                    />
-                    <FactItem
-                      label="Expected TOP"
-                      value={selectedProject.expectedTop ?? "Not listed"}
-                    />
-                    <FactItem
-                      label="Units"
-                      value={
-                        selectedProject.totalUnits?.toLocaleString("en-SG") ??
-                        "Not listed"
-                      }
-                    />
-                    <FactItem
-                      label="Nearest MRT"
-                      value={selectedProject.nearestMrt ?? "Not listed"}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-sm font-medium text-warm-stone">
-                    Selected BTO project
-                  </p>
-                  <h3 className="mt-1 text-xl font-semibold text-heritage-navy">
-                    No project selected
-                  </h3>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-warm-stone">
-                    Choose one from BTO Radar to prefill flat type, price,
-                    launch month, and expected completion details.
-                  </p>
-                </div>
-              )}
-            </div>
-            <div className="flex shrink-0 gap-2">
-              {selectedProject?.sourceUrl && (
-                <a
-                  href={selectedProject.sourceUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn-secondary"
-                >
-                  View source
-                </a>
-              )}
-              <button type="button" className="btn-primary" onClick={onOpenBtoRadar}>
-                {selectedProject ? "Change project" : "Choose project"}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <PlanStoragePanel
-          status={planStorageStatus}
-          error={planStorageError}
-          onSave={onSavePlan}
-          onDownload={onDownloadPlan}
-          onImport={onImportPlan}
+      <div className="space-y-5">
+        <ScenarioLedger
+          selectedProject={selectedProject}
+          combinedIncome={combinedIncome}
+          loanAmount={loanAmount}
+          ehgGrant={ehgGrant}
+          flatPrice={flatPrice}
+          flatType={flatType}
+          financing={financing}
+          scheme={scheme}
+          signingAmount={signingAmount}
+          keyAmount={keyAmount}
+          minCashSigning={minCashSigning}
+          immediateCostsTotal={immediateCostsTotal}
+          downpaymentTotal={downpaymentTotal}
+          totalPlannedCosts={totalPlannedCosts}
+          downpaymentNote={downpaymentNote}
+          planStorageStatus={planStorageStatus}
+          planStorageError={planStorageError}
+          onIncomeChange={onIncomeChange}
+          onFlatPriceChange={onFlatPriceChange}
+          onFlatTypeChange={onFlatTypeChange}
+          onFinancingChange={onFinancingChange}
+          onSchemeChange={onSchemeChange}
+          onOpenBtoRadar={onOpenBtoRadar}
+          onSavePlan={onSavePlan}
         />
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
-          <div className="panel space-y-5 p-6">
-            <h3 className="text-base font-semibold text-heritage-navy">
-              Scenario inputs
-            </h3>
-            <NumberSliderField
-              id="flat-price"
-              label="Target flat price"
-              min={FLAT_MIN}
-              max={FLAT_MAX}
-              step={5000}
-              value={flatPrice}
-              onChange={onFlatPriceChange}
-              minLabel={currency(FLAT_MIN)}
-              maxLabel={currency(FLAT_MAX)}
-            />
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="grid gap-2">
-                <label className="field-label" htmlFor="flat-type">
-                  Flat type
-                </label>
-                <select
-                  id="flat-type"
-                  value={flatType}
-                  onChange={(event) =>
-                    onFlatTypeChange(event.target.value as FlatType)
-                  }
-                  className="control"
-                >
-                  {FLAT_TYPE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid gap-2">
-                <label className="field-label" htmlFor="financing-type">
-                  Financing type
-                </label>
-                <select
-                  id="financing-type"
-                  value={financing}
-                  onChange={(event) =>
-                    onFinancingChange(event.target.value as FinancingType)
-                  }
-                  className="control"
-                >
-                  {FINANCING_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid gap-2">
-                <label className="field-label" htmlFor="payment-scheme">
-                  Payment scheme
-                </label>
-                <select
-                  id="payment-scheme"
-                  value={scheme}
-                  onChange={(event) =>
-                    onSchemeChange(event.target.value as SchemeType)
-                  }
-                  className="control"
-                >
-                  {SCHEME_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div className="panel flex flex-col justify-between gap-5 p-6">
-            <div>
-              <h3 className="text-base font-semibold text-heritage-navy">
-                Estimated loan value
-              </h3>
-              <p className="mt-2 text-sm leading-6 text-warm-stone">
-                From the household income used in Overview.
-              </p>
-            </div>
-            <div>
-              <p className="text-3xl font-semibold text-heritage-navy">
-                {currency(loanAmount)}
-              </p>
-              <div className="mt-4 space-y-2 text-sm">
-                <CostRow label="Current financing" value={formatFinancing(financing)} />
-                <CostRow label="Flat price" value={currency(flatPrice)} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-3">
-          <div className="panel space-y-4 p-6">
-            <h3 className="text-base font-semibold text-heritage-navy">
-              Required Downpayment
-            </h3>
-            <div className="space-y-3">
-              <CostRow label="Signing" value={currency(signingAmount)} />
-              <CostRow label="Key collection" value={currency(keyAmount)} />
-              <CostRow
-                label="Minimum cash at signing"
-                value={currency(minCashSigning)}
-              />
-            </div>
-            <div className="rounded-hdb border border-heritage-navy/10 bg-heritage-navy/5 p-3 text-xs text-warm-stone">
-              {downpaymentNote}
-            </div>
-          </div>
-
-          <div className="panel space-y-4 p-6">
-            <h3 className="text-base font-semibold text-heritage-navy">
-              Immediate Costs
-            </h3>
-            <div className="space-y-2 text-sm">
-              {[
-                ["Application fee", POLICY_CONFIG.fees.applicationFee],
-                [`Option fee (${flatType})`, optionFee],
-                [`Survey fee (${flatType})`, surveyFee],
-                [`Fire insurance (${flatType})`, fireInsurance],
-                ["Registration fee", POLICY_CONFIG.fees.registrationFeeLeaseEscrow],
-              ].map(([label, amount]) => (
-                <CostRow
-                  key={label}
-                  label={String(label)}
-                  value={currency(Number(amount))}
-                />
-              ))}
-              <CostRow
-                label="GST rate"
-                value={`${(POLICY_CONFIG.fees.gstRate * 100).toFixed(0)}%`}
-              />
-            </div>
-            <div className="text-xs text-warm-stone">
-              Source: {POLICY_CONFIG.sources.processOverview.label}
-            </div>
-          </div>
-
-          <div className="panel space-y-4 p-6">
-            <h3 className="text-base font-semibold text-heritage-navy">
-              Total costs
-            </h3>
-            <p className="text-3xl font-semibold text-heritage-navy">
-              {currency(totalPlannedCosts)}
-            </p>
-            <div className="space-y-3 text-sm">
-              <CostRow
-                label="Required downpayment"
-                value={currency(downpaymentTotal)}
-              />
-              <CostRow
-                label="Immediate fees"
-                value={currency(immediateCostsTotal)}
-              />
-            </div>
-            <p className="text-xs leading-5 text-warm-stone">
-              Sum of listed downpayment and fee items. Loan balance and CPF OA
-              availability are not deducted here.
-            </p>
-          </div>
-        </div>
-
-        <div className="panel space-y-4 p-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h3 className="text-base font-semibold text-heritage-navy">
-                Key milestones from application to keys{" "}
-                <span className="font-normal text-warm-stone">(estimated)</span>
-              </h3>
-              <p className="mt-1 text-sm text-warm-stone">
-                Based on default BTO offsets, not confirmed appointment dates.
-              </p>
-            </div>
-            <div className="rounded-hdb border border-heritage-navy/10 bg-white px-3 py-2 text-sm text-warm-stone">
-              {selectedProject
-                ? `Starts from ${selectedProject.launchMonth}`
-                : "Choose a project to set the launch month"}
-            </div>
-          </div>
-
-          <div className="overflow-x-auto rounded-hdb border border-heritage-navy/15">
-            <table className="w-full min-w-[900px] border-collapse text-left text-sm">
-              <thead className="bg-heritage-navy text-hdb-bg">
-                <tr className="text-xs">
-                  <th className="w-16 px-4 py-3 font-semibold">Step</th>
-                  <th className="px-4 py-3 font-semibold">Milestone</th>
-                  <th className="px-4 py-3 font-semibold">Date</th>
-                  <th className="px-4 py-3 font-semibold">Payment item</th>
-                  <th className="px-4 py-3 text-right font-semibold">Payment</th>
-                  <th className="px-4 py-3 text-right font-semibold">CPF OA</th>
-                  <th className="px-4 py-3 text-right font-semibold">Cash</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-heritage-navy/10">
-              {timeline.map((item, index) => (
-                <tr
-                  key={item.label}
-                  className="align-top odd:bg-white even:bg-hdb-bg/70 hover:bg-electric-mint/10"
-                >
-                  <td className="px-4 py-4">
-                    <span
-                      className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-extrabold ${MILESTONE_NODE_CLASS}`}
-                    >
-                      {index + 1}
-                    </span>
-                  </td>
-                  <td className="max-w-[300px] px-4 py-4">
-                    <p className="font-semibold text-heritage-navy">
-                      {item.label}
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-heritage-navy/70">
-                      {item.note}
-                      {item.payment?.note ? ` ${item.payment.note}` : ""}
-                    </p>
-                  </td>
-                  <td className="px-4 py-4 font-semibold text-heritage-navy">
-                    {item.date}
-                  </td>
-                  <td className="px-4 py-4 text-heritage-navy/75">
-                    {item.payment?.label ?? "-"}
-                  </td>
-                  <td className="px-4 py-4 text-right">
-                    {item.payment ? (
-                      <AmountPill tone="total" value={currency(item.payment.total)} />
-                    ) : (
-                      "-"
-                    )}
-                  </td>
-                  <td className="px-4 py-4 text-right">
-                    {item.payment ? (
-                      <AmountPill tone="cpf" value={currency(item.payment.cpfOa)} />
-                    ) : (
-                      "-"
-                    )}
-                  </td>
-                  <td className="px-4 py-4 text-right">
-                    {item.payment ? (
-                      <AmountPill tone="cash" value={currency(item.payment.cash)} />
-                    ) : (
-                      "-"
-                    )}
-                  </td>
-                </tr>
-              ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="text-xs text-warm-stone">
-            CPF OA usage depends on available OA balance and eligibility. Treat
-            the split as an indicative guide.
-          </p>
-        </div>
+        <TimelineBoard
+          timeline={timeline}
+          selectedProject={selectedProject}
+          completedMilestones={completedMilestones}
+          onToggleMilestoneComplete={onToggleMilestoneComplete}
+        />
       </div>
     </section>
   );
 }
 
-function PlanStoragePanel({
-  status,
-  error,
-  onSave,
-  onDownload,
-  onImport,
+function ScenarioLedger({
+  selectedProject,
+  combinedIncome,
+  loanAmount,
+  ehgGrant,
+  flatPrice,
+  flatType,
+  financing,
+  scheme,
+  signingAmount,
+  keyAmount,
+  minCashSigning,
+  immediateCostsTotal,
+  downpaymentTotal,
+  totalPlannedCosts,
+  downpaymentNote,
+  planStorageStatus,
+  planStorageError,
+  onIncomeChange,
+  onFlatPriceChange,
+  onFlatTypeChange,
+  onFinancingChange,
+  onSchemeChange,
+  onOpenBtoRadar,
+  onSavePlan,
 }: {
-  status: string;
-  error: string | null;
-  onSave: () => void;
-  onDownload: () => void;
-  onImport: (file: File) => void | Promise<void>;
+  selectedProject: BtoProject | null;
+  combinedIncome: number;
+  loanAmount: number;
+  ehgGrant: number;
+  flatPrice: number;
+  flatType: FlatType;
+  financing: FinancingType;
+  scheme: SchemeType;
+  signingAmount: number;
+  keyAmount: number;
+  minCashSigning: number;
+  immediateCostsTotal: number;
+  downpaymentTotal: number;
+  totalPlannedCosts: number;
+  downpaymentNote: string;
+  planStorageStatus: string;
+  planStorageError: string | null;
+  onIncomeChange: (value: number) => void;
+  onFlatPriceChange: (value: number) => void;
+  onFlatTypeChange: (value: FlatType) => void;
+  onFinancingChange: (value: FinancingType) => void;
+  onSchemeChange: (value: SchemeType) => void;
+  onOpenBtoRadar: () => void;
+  onSavePlan: () => void;
 }) {
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const loanCoverage = Math.min(
+    100,
+    Math.round((loanAmount / Math.max(flatPrice, 1)) * 100)
+  );
 
   return (
-    <div className="panel p-5">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="panel scenario-ledger">
+      <div className="scenario-ledger-head">
         <div>
-          <h3 className="text-base font-semibold text-heritage-navy">
-            Saved scenario
+          <p className="scenario-eyebrow">Selected scenario</p>
+          <h3 className="mt-1 text-xl font-semibold text-heritage-navy">
+            {selectedProject?.name ?? "No project selected"}
           </h3>
-          <p className="mt-1 text-sm text-warm-stone">{status}</p>
-          {error && (
-            <p className="mt-1 text-sm font-medium text-red-700">{error}</p>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-warm-stone">
+            {selectedProject
+              ? `${selectedProject.location}, ${selectedProject.launchMonth}`
+              : "Choose a BTO project to prefill launch month, completion, and project context."}
+          </p>
+        </div>
+        <div className="scenario-ledger-actions">
+          {selectedProject?.sourceUrl && (
+            <a
+              href={selectedProject.sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-secondary"
+            >
+              View source
+            </a>
+          )}
+          <button type="button" className="btn-primary" onClick={onOpenBtoRadar}>
+            {selectedProject ? "Change project" : "Choose project"}
+          </button>
+        </div>
+      </div>
+
+      <div className="scenario-ledger-body">
+        <section className="scenario-price-section" aria-labelledby="scenario-price-title">
+          <div>
+            <p id="scenario-price-title" className="scenario-section-label">
+              Target flat price
+            </p>
+            <p className="scenario-price">{currency(flatPrice)}</p>
+          </div>
+
+          <NumberSliderField
+            id="flat-price"
+            label="Adjust target price"
+            min={FLAT_MIN}
+            max={FLAT_MAX}
+            step={5000}
+            value={flatPrice}
+            onChange={onFlatPriceChange}
+            minLabel={currency(FLAT_MIN)}
+            maxLabel={currency(FLAT_MAX)}
+          />
+
+          <div className="scenario-fact-grid">
+            <ScenarioFact label="Flat" value={flatType} />
+            <ScenarioFact
+              label="Expected TOP"
+              value={selectedProject?.expectedTop ?? "Not listed"}
+            />
+            <ScenarioFact
+              label="Units"
+              value={selectedProject?.totalUnits?.toLocaleString("en-SG") ?? "Not listed"}
+            />
+            <ScenarioFact
+              label="Nearest MRT"
+              value={selectedProject?.nearestMrt ?? "Not listed"}
+            />
+          </div>
+        </section>
+
+        <section className="scenario-assumptions-section" aria-label="Scenario assumptions">
+          <div>
+            <p className="scenario-section-label">Assumptions</p>
+            <p className="mt-1 text-sm leading-6 text-warm-stone">
+              These controls drive the downpayment and timeline split.
+            </p>
+          </div>
+
+          <div className="scenario-control-grid">
+            <NumberSliderField
+              id="plan-income"
+              label="Monthly household income"
+              helperText="Updates the loan and grant figures in this plan."
+              min={INCOME_MIN}
+              max={INCOME_MAX}
+              step={100}
+              value={combinedIncome}
+              onChange={onIncomeChange}
+              minLabel={currency(INCOME_MIN)}
+              maxLabel={currency(INCOME_MAX)}
+            />
+            <ScenarioSelect
+              id="flat-type"
+              label="Flat type"
+              value={flatType}
+              onChange={(value) => onFlatTypeChange(value as FlatType)}
+              options={FLAT_TYPE_OPTIONS}
+            />
+            <ScenarioSelect
+              id="financing-type"
+              label="Financing"
+              value={financing}
+              onChange={(value) => onFinancingChange(value as FinancingType)}
+              options={FINANCING_OPTIONS}
+            />
+            <ScenarioSelect
+              id="payment-scheme"
+              label="Payment scheme"
+              value={scheme}
+              onChange={(value) => onSchemeChange(value as SchemeType)}
+              options={SCHEME_OPTIONS}
+            />
+          </div>
+
+          <p className="scenario-note">{downpaymentNote}</p>
+        </section>
+
+        <section className="scenario-money-section" aria-label="Money snapshot">
+          <div className="scenario-money-head">
+            <div>
+              <p className="scenario-section-label">Money snapshot</p>
+              <p className="mt-1 text-sm text-warm-stone">
+                Listed payments before loan balance.
+              </p>
+            </div>
+            <div className="scenario-money-total">
+              <p className="scenario-snapshot-total">{currency(totalPlannedCosts)}</p>
+              <p className="text-xs text-warm-stone">Total listed costs</p>
+            </div>
+          </div>
+
+          <div className="scenario-loan-meter">
+            <div className="flex items-center justify-between gap-3 text-xs">
+              <span className="font-medium text-heritage-navy">Estimated loan</span>
+              <span className="money-value font-semibold text-heritage-navy">
+                {currency(loanAmount)}
+              </span>
+            </div>
+            <div className="scenario-meter-track" aria-hidden="true">
+              <span
+                className="scenario-meter-fill"
+                style={{ width: `${loanCoverage}%` }}
+              />
+            </div>
+            <p className="text-xs text-warm-stone">
+              Covers about {loanCoverage}% of the target price.
+            </p>
+          </div>
+
+          <div className="scenario-ledger-rows">
+            <CostRow label="Required downpayment" value={currency(downpaymentTotal)} />
+            <CostRow label="Signing" value={currency(signingAmount)} />
+            <CostRow label="Key collection" value={currency(keyAmount)} />
+            <CostRow label="Minimum cash at signing" value={currency(minCashSigning)} />
+            <CostRow label="EHG grant estimate" value={currency(ehgGrant)} />
+            <CostRow label="Immediate fees" value={currency(immediateCostsTotal)} />
+          </div>
+
+          <div className="scenario-fee-row">
+            <span>Fees include application, option, survey, insurance, and registration.</span>
+            <span className="money-value">{currency(immediateCostsTotal)}</span>
+          </div>
+        </section>
+      </div>
+
+      <div className="scenario-save-strip">
+        <div>
+          <p className="text-sm font-semibold text-heritage-navy">Saved scenario</p>
+          <p className="mt-1 text-sm text-warm-stone">{planStorageStatus}</p>
+          {planStorageError && (
+            <p className="mt-1 text-sm font-medium text-red-700">{planStorageError}</p>
           )}
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" className="btn-primary" onClick={onSave}>
+        <div className="scenario-save-actions">
+          <button type="button" className="btn-primary" onClick={onSavePlan}>
             Save plan
           </button>
-          <button type="button" className="btn-secondary" onClick={onDownload}>
-            Download JSON
-          </button>
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            Load JSON
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/json,.json"
-            className="hidden"
-            onChange={(event) => {
-              const file = event.currentTarget.files?.[0];
-              if (file) void onImport(file);
-              event.currentTarget.value = "";
-            }}
-          />
         </div>
       </div>
     </div>
   );
 }
 
-function AmountPill({
-  tone,
-  value,
-}: {
-  tone: "total" | "cpf" | "cash";
-  value: string;
-}) {
-  const toneClass =
-    tone === "total"
-      ? "bg-heritage-navy text-hdb-bg"
-      : tone === "cpf"
-        ? "bg-futuristic-teal/15 text-heritage-navy ring-futuristic-teal/30"
-        : "bg-electric-mint/25 text-heritage-navy ring-electric-mint/40";
-
+function ScenarioFact({ label, value }: { label: string; value: string }) {
   return (
-    <span
-      className={`inline-flex min-w-[96px] justify-center rounded-hdb px-2.5 py-1 text-xs font-semibold ring-1 ${toneClass}`}
-    >
-      {value}
-    </span>
+    <div className="scenario-fact">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
   );
 }
 
-function formatFinancing(value: FinancingType) {
-  return FINANCING_OPTIONS.find((option) => option.value === value)?.label ?? value;
+function ScenarioSelect({
+  id,
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="grid gap-2">
+      <label className="field-label" htmlFor={id}>
+        {label}
+      </label>
+      <select
+        id={id}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="control"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+type TimelineFlowGroup = {
+  date: string;
+  items: TimelineItem[];
+  firstIndex: number;
+  totalPayment: number;
+  cpfOa: number;
+  cash: number;
+};
+
+function getTimelineFlowGroups(timeline: TimelineItem[]) {
+  return timeline.reduce<TimelineFlowGroup[]>((groups, item, index) => {
+    const existing = groups.find((group) => group.date === item.date);
+    const payment = item.payment;
+    const totalPayment = payment?.total ?? 0;
+    const cpfOa = payment?.cpfOa ?? 0;
+    const cash = payment?.cash ?? 0;
+
+    if (existing) {
+      existing.items.push(item);
+      existing.totalPayment += totalPayment;
+      existing.cpfOa += cpfOa;
+      existing.cash += cash;
+      return groups;
+    }
+
+    groups.push({
+      date: item.date,
+      items: [item],
+      firstIndex: index,
+      totalPayment,
+      cpfOa,
+      cash,
+    });
+
+    return groups;
+  }, []);
+}
+
+function TimelineBoard({
+  timeline,
+  selectedProject,
+  completedMilestones,
+  onToggleMilestoneComplete,
+}: {
+  timeline: TimelineItem[];
+  selectedProject: BtoProject | null;
+  completedMilestones: string[];
+  onToggleMilestoneComplete: (label: string) => void;
+}) {
+  const groups = getTimelineFlowGroups(timeline);
+  const totalPayment = groups.reduce(
+    (total, group) => total + group.totalPayment,
+    0
+  );
+
+  return (
+    <section className="panel timeline-board-panel">
+      <div className="timeline-board-head">
+        <div>
+          <h3 className="text-lg font-semibold text-heritage-navy">
+            Milestone calendar{" "}
+            <span className="font-normal text-warm-stone">(estimated)</span>
+          </h3>
+          <p className="mt-1 text-sm leading-6 text-warm-stone">
+            Based on default BTO offsets, not confirmed appointment dates.
+          </p>
+        </div>
+        <div className="timeline-board-summary">
+          <span>
+            {selectedProject
+              ? `Starts from ${selectedProject.launchMonth}`
+              : "Choose a project to set the launch month"}
+          </span>
+          <strong>{currency(totalPayment)}</strong>
+          <em>
+            {completedMilestones.length}/{timeline.length} milestones done
+          </em>
+        </div>
+      </div>
+
+      <div className="timeline-flow">
+        <ol className="timeline-flow-list" aria-label="Estimated payment milestones">
+          {groups.map((group) => {
+            const completedInGroup = group.items.filter((item) =>
+              completedMilestones.includes(item.label)
+            ).length;
+            const groupComplete = completedInGroup === group.items.length;
+
+            return (
+              <li
+                key={group.date}
+                className={`timeline-flow-group ${
+                  groupComplete ? "timeline-flow-group-complete" : ""
+                }`}
+              >
+                <div className="timeline-flow-date">
+                  <span>{group.date}</span>
+                  <strong>
+                    {group.totalPayment > 0
+                      ? currency(group.totalPayment)
+                      : "No payment"}
+                  </strong>
+                </div>
+                <div className="timeline-flow-node-wrap" aria-hidden="true">
+                  <span className="timeline-flow-node">
+                    {String(group.firstIndex + 1).padStart(2, "0")}
+                  </span>
+                </div>
+                <div className="timeline-flow-content">
+                  <div className="timeline-flow-group-head">
+                    <div>
+                      <h4>{group.date}</h4>
+                      <p>
+                        {group.items.length === 1
+                          ? "1 milestone"
+                          : `${group.items.length} milestones`}
+                      </p>
+                    </div>
+                    <span>
+                      {completedInGroup}/{group.items.length} done
+                    </span>
+                  </div>
+                  {group.totalPayment > 0 && (
+                    <PaymentMixBar
+                      cpfOa={group.cpfOa}
+                      cash={group.cash}
+                      total={group.totalPayment}
+                    />
+                  )}
+                  <ol className="timeline-flow-cards">
+                    {group.items.map((item, itemIndex) => (
+                      <TimelineBoardCard
+                        key={item.label}
+                        item={item}
+                        stepIndex={group.firstIndex + itemIndex}
+                        isComplete={completedMilestones.includes(item.label)}
+                        onToggleComplete={onToggleMilestoneComplete}
+                      />
+                    ))}
+                  </ol>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+
+      <p className="timeline-footnote">
+        CPF OA usage depends on available OA balance and eligibility. Treat the
+        split as an indicative guide.
+      </p>
+    </section>
+  );
+}
+
+function TimelineBoardCard({
+  item,
+  stepIndex,
+  isComplete,
+  onToggleComplete,
+}: {
+  item: TimelineItem;
+  stepIndex: number;
+  isComplete: boolean;
+  onToggleComplete: (label: string) => void;
+}) {
+  return (
+    <li
+      className={`timeline-flow-card ${
+        item.payment ? "timeline-flow-card-payment" : ""
+      } ${isComplete ? "timeline-flow-card-complete" : ""}`}
+    >
+      <div className="timeline-flow-card-main">
+        <div className="timeline-flow-card-top">
+          <span className="timeline-flow-step">
+            {String(stepIndex + 1).padStart(2, "0")}
+          </span>
+          <h5>{item.label}</h5>
+        </div>
+        <p>{item.note}</p>
+        <button
+          type="button"
+          className={`timeline-complete-toggle ${
+            isComplete ? "timeline-complete-toggle-on" : ""
+          }`}
+          aria-pressed={isComplete}
+          onClick={() => onToggleComplete(item.label)}
+        >
+          <span className="timeline-complete-box" aria-hidden="true" />
+          {isComplete ? "Done" : "Mark done"}
+        </button>
+      </div>
+
+      <div className="timeline-flow-card-side">
+        {item.payment && (
+          <span className="timeline-flow-total">
+            {currency(item.payment.total)}
+          </span>
+        )}
+        {item.payment ? (
+          <div className="timeline-board-payment">
+            <p className="text-xs font-semibold text-heritage-navy">
+              {item.payment.label}
+            </p>
+            <div className="timeline-board-split">
+              <PaymentSource label="CPF OA" value={item.payment.cpfOa} tone="cpf" />
+              <PaymentSource label="Cash" value={item.payment.cash} tone="cash" />
+            </div>
+          </div>
+        ) : (
+          <div className="timeline-board-empty">No payment expected</div>
+        )}
+      </div>
+    </li>
+  );
+}
+
+function PaymentMixBar({
+  cpfOa,
+  cash,
+  total,
+  compact = false,
+}: {
+  cpfOa: number;
+  cash: number;
+  total: number;
+  compact?: boolean;
+}) {
+  const denominator = Math.max(cpfOa + cash, total, 1);
+  const cpfPercent = (cpfOa / denominator) * 100;
+  const cashPercent = (cash / denominator) * 100;
+
+  return (
+    <div className={compact ? "mt-3" : "mt-1"}>
+      <div className="payment-mix-bar" aria-hidden="true">
+        {cpfOa > 0 && (
+          <span
+            className="payment-mix-segment payment-mix-cpf"
+            style={{ width: `${Math.max(cpfPercent, 5)}%` }}
+          />
+        )}
+        {cash > 0 && (
+          <span
+            className="payment-mix-segment payment-mix-cash"
+            style={{ width: `${Math.max(cashPercent, 5)}%` }}
+          />
+        )}
+        {cpfOa === 0 && cash === 0 && <span className="payment-mix-empty" />}
+      </div>
+      {!compact && (
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-warm-stone">
+          <span className="money-value">CPF OA {currency(cpfOa)}</span>
+          <span className="money-value">Cash {currency(cash)}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PaymentSource({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "cpf" | "cash";
+}) {
+  return (
+    <div className={`payment-source payment-source-${tone}`}>
+      <p className="payment-source-value">{currency(value)}</p>
+      <p className="mt-0.5 text-[0.72rem] text-current/70">{label}</p>
+    </div>
+  );
 }
 
 function CostRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="text-warm-stone">{label}</span>
-      <span className="font-semibold text-heritage-navy">{value}</span>
+    <div className="cost-row">
+      <span className="min-w-0 text-warm-stone">{label}</span>
+      <span className="cost-row-value">{value}</span>
     </div>
   );
 }

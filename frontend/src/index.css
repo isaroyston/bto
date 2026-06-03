@@ -4,11 +4,11 @@
 
 @layer base {
   :root {
-    --color-hdb-bg: 97.5% 0.006 95;
+    --color-hdb-bg: 97.8% 0.004 235;
     --color-heritage-navy: 25% 0.034 247;
-    --color-warm-stone: 49% 0.012 85;
-    --color-futuristic-teal: 50% 0.078 180;
-    --color-electric-mint: 61% 0.09 170;
+    --color-warm-stone: 46% 0.018 245;
+    --color-futuristic-teal: 48% 0.08 184;
+    --color-electric-mint: 63% 0.085 170;
   }
 
   html {
@@ -17,6 +17,7 @@
 
   body {
     @apply bg-hdb-bg font-sans text-heritage-navy antialiased;
+    overflow-x: hidden;
   }
 
   button,
@@ -28,7 +29,7 @@
 
 @layer components {
   .panel {
-    @apply rounded-hdb border border-heritage-navy/10 bg-white shadow-card;
+    @apply min-w-0 rounded-hdb border border-heritage-navy/10 bg-white shadow-card;
   }
 
   .metric-card {
@@ -67,8 +68,581 @@
     @apply rounded-hdb bg-futuristic-teal px-4 py-2 text-sm font-medium text-hdb-bg transition-colors hover:bg-electric-mint disabled:cursor-not-allowed disabled:opacity-50;
   }
 
+  .money-value {
+    @apply whitespace-nowrap tabular-nums;
+  }
+
   .bto-reveal {
     animation: bto-reveal 180ms ease-out;
+  }
+
+  .overview-page-head {
+    @apply flex flex-col gap-4 md:flex-row md:items-end md:justify-between;
+  }
+
+  .overview-hero-actions {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .overview-hero {
+    @apply grid gap-5 p-5 md:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.38fr)] lg:items-stretch;
+    background: oklch(99.2% 0.003 235);
+  }
+
+  .overview-status-chip {
+    @apply inline-flex rounded-full px-2.5 py-1 text-xs font-semibold;
+  }
+
+  .overview-status-ready {
+    color: oklch(34% 0.07 178);
+    background: oklch(93.5% 0.045 178);
+  }
+
+  .overview-status-missing {
+    color: oklch(38% 0.095 25);
+    background: oklch(95% 0.032 25);
+  }
+
+  .overview-hero-actions {
+    @apply mt-5;
+  }
+
+  .overview-price-stack {
+    @apply border-t border-heritage-navy/10 pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0;
+  }
+
+  .overview-price {
+    @apply mt-2 whitespace-nowrap text-3xl font-semibold tabular-nums text-heritage-navy;
+  }
+
+  .overview-price-meta {
+    @apply mt-3 flex flex-wrap gap-2 text-xs font-medium text-warm-stone;
+  }
+
+  .overview-price-meta span {
+    @apply rounded-full bg-white px-2.5 py-1 ring-1 ring-heritage-navy/10;
+  }
+
+  .overview-stat-panel {
+    @apply grid gap-0 p-5 md:grid-cols-3 md:p-6;
+  }
+
+  .overview-stat {
+    @apply border-t border-heritage-navy/10 pt-4;
+  }
+
+  .overview-stat:first-child {
+    @apply border-t-0 pt-0;
+  }
+
+  .overview-stat-value {
+    @apply mt-1 whitespace-nowrap text-xl font-semibold tabular-nums text-heritage-navy;
+  }
+
+  .overview-stat-value-grant {
+    color: oklch(37% 0.08 178);
+  }
+
+  .overview-main-grid {
+    @apply grid gap-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(340px,0.65fr)];
+  }
+
+  .overview-progress-panel,
+  .overview-context-panel,
+  .overview-policy-panel {
+    @apply p-5 md:p-6;
+  }
+
+  .overview-progress-count {
+    @apply shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums text-heritage-navy ring-1 ring-heritage-navy/10;
+    background: oklch(96.8% 0.016 205 / 0.72);
+  }
+
+  .overview-progress-track {
+    @apply mt-5 h-2 overflow-hidden rounded-full bg-heritage-navy/10;
+  }
+
+  .overview-progress-track span {
+    @apply block h-full rounded-full;
+    background: oklch(55% 0.085 178);
+  }
+
+  .overview-progress-notes {
+    @apply mt-4 flex flex-wrap gap-2 text-xs font-medium text-warm-stone;
+  }
+
+  .overview-progress-notes span {
+    @apply rounded-full bg-white px-2.5 py-1 ring-1 ring-heritage-navy/10;
+  }
+
+  .overview-fact-grid {
+    @apply mt-5 grid gap-4 text-sm sm:grid-cols-2;
+  }
+
+  .overview-empty-state {
+    @apply mt-5 border-t border-heritage-navy/10 pt-4;
+  }
+
+  .overview-policy-panel {
+    @apply grid gap-4 md:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] md:items-start;
+  }
+
+  .overview-policy-grid {
+    @apply grid gap-4 sm:grid-cols-2;
+  }
+
+  @media (min-width: 768px) {
+    .overview-stat {
+      @apply border-l border-t-0 pl-5 pt-0;
+    }
+
+    .overview-stat:first-child {
+      @apply border-l-0 pl-0;
+    }
+  }
+
+  .scenario-ledger {
+    @apply overflow-hidden;
+    background: white;
+  }
+
+  .scenario-ledger-head {
+    @apply flex min-w-0 flex-col gap-4 border-b border-heritage-navy/10 px-5 py-5 md:flex-row md:items-start md:justify-between md:px-6;
+    background: white;
+  }
+
+  .scenario-eyebrow,
+  .scenario-section-label {
+    @apply text-sm font-semibold text-heritage-navy;
+  }
+
+  .scenario-ledger-actions,
+  .scenario-save-actions {
+    @apply flex shrink-0 flex-wrap gap-2;
+  }
+
+  .scenario-ledger-body {
+    @apply grid min-w-0 gap-5 px-5 py-5 md:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(340px,0.48fr)];
+  }
+
+  .scenario-price-section,
+  .scenario-assumptions-section,
+  .scenario-money-section {
+    @apply min-w-0 rounded-hdb border border-heritage-navy/10 p-4;
+    box-shadow: inset 0 0 0 1px oklch(var(--color-heritage-navy) / 0.08);
+  }
+
+  .scenario-price-section {
+    @apply grid gap-5;
+    background: oklch(99% 0.003 235);
+  }
+
+  .scenario-assumptions-section {
+    @apply grid content-start gap-4;
+    background: white;
+  }
+
+  .scenario-money-section {
+    @apply grid content-start gap-4;
+    background: oklch(98.7% 0.01 205);
+  }
+
+  .scenario-price {
+    @apply mt-2 whitespace-nowrap text-4xl font-semibold tabular-nums text-heritage-navy md:text-5xl;
+    line-height: 1;
+  }
+
+  .scenario-fact-grid {
+    @apply grid gap-2 sm:grid-cols-2 xl:grid-cols-4;
+  }
+
+  .scenario-fact {
+    @apply rounded-hdb px-3 py-2 text-xs;
+    background: oklch(100% 0 0 / 0.64);
+    box-shadow: inset 0 0 0 1px oklch(var(--color-heritage-navy) / 0.07);
+  }
+
+  .scenario-fact span {
+    @apply block text-warm-stone;
+  }
+
+  .scenario-fact strong {
+    @apply mt-1 block truncate text-sm font-semibold text-heritage-navy;
+  }
+
+  .scenario-note {
+    @apply rounded-hdb px-3 py-2 text-xs leading-5 text-warm-stone;
+    background: oklch(96.8% 0.016 205 / 0.72);
+    box-shadow: inset 0 0 0 1px oklch(78% 0.035 205 / 0.55);
+  }
+
+  .scenario-control-grid {
+    @apply grid gap-4;
+  }
+
+  .scenario-snapshot-total {
+    @apply whitespace-nowrap text-xl font-semibold tabular-nums;
+    color: oklch(42% 0.11 25);
+  }
+
+  .scenario-money-head {
+    @apply grid items-start gap-3;
+    grid-template-columns: minmax(0, 1fr) minmax(8.75rem, max-content);
+  }
+
+  .scenario-money-total {
+    @apply shrink-0 text-right;
+  }
+
+  .scenario-money-total p:last-child {
+    @apply whitespace-nowrap;
+  }
+
+  .scenario-loan-meter {
+    @apply grid gap-2 rounded-hdb p-3;
+    background: oklch(100% 0 0 / 0.64);
+    box-shadow: inset 0 0 0 1px oklch(var(--color-heritage-navy) / 0.08);
+  }
+
+  .scenario-meter-track {
+    @apply h-2 overflow-hidden rounded-full bg-heritage-navy/10;
+  }
+
+  .scenario-meter-fill {
+    @apply block h-full rounded-full;
+    background: oklch(55% 0.085 178);
+  }
+
+  .scenario-ledger-rows {
+    @apply space-y-2 text-sm;
+  }
+
+  .cost-row {
+    @apply grid items-baseline gap-4;
+    grid-template-columns: minmax(0, 1fr) minmax(8.25ch, max-content);
+  }
+
+  .cost-row-value {
+    @apply whitespace-nowrap text-right font-semibold tabular-nums text-heritage-navy;
+  }
+
+  .scenario-fee-row {
+    @apply flex flex-col gap-1 rounded-hdb px-3 py-2 text-xs leading-5 text-warm-stone sm:flex-row sm:items-center sm:justify-between;
+    background: oklch(100% 0 0 / 0.5);
+  }
+
+  .scenario-fee-row span:last-child {
+    @apply font-semibold text-heritage-navy;
+  }
+
+  .scenario-save-strip {
+    @apply flex min-w-0 flex-col gap-4 border-t border-heritage-navy/10 px-5 py-4 md:flex-row md:items-center md:justify-between md:px-6;
+    background: oklch(99% 0.003 235);
+  }
+
+  @media (min-width: 768px) {
+    .scenario-control-grid {
+      @apply grid-cols-2;
+    }
+
+    .scenario-control-grid > :first-child {
+      @apply col-span-2;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .scenario-money-section {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+    }
+  }
+
+  .timeline-board-panel {
+    @apply overflow-hidden bg-white;
+  }
+
+  .timeline-board-head {
+    @apply flex flex-col gap-4 border-b border-heritage-navy/10 px-5 py-5 md:flex-row md:items-start md:justify-between md:px-6;
+  }
+
+  .timeline-board-summary {
+    @apply grid gap-1 rounded-hdb px-3 py-2 text-right ring-1 ring-heritage-navy/10;
+    background: oklch(99% 0.003 235);
+  }
+
+  .timeline-board-summary span {
+    @apply text-xs font-medium text-warm-stone;
+  }
+
+  .timeline-board-summary strong {
+    @apply whitespace-nowrap text-lg font-semibold tabular-nums;
+    color: oklch(42% 0.11 25);
+  }
+
+  .timeline-board-summary em {
+    @apply text-xs not-italic text-warm-stone;
+  }
+
+  .timeline-flow {
+    @apply px-4 py-5 md:px-6 md:py-6;
+    background:
+      linear-gradient(90deg, oklch(97.8% 0.004 235), white 42%),
+      oklch(98.5% 0.004 235);
+  }
+
+  .timeline-flow-list {
+    @apply grid list-none gap-0;
+  }
+
+  .timeline-flow-group {
+    @apply grid gap-3;
+    grid-template-columns: minmax(5.5rem, 7.75rem) 2.25rem minmax(0, 1fr);
+  }
+
+  .timeline-flow-date {
+    @apply pt-1.5 text-right;
+  }
+
+  .timeline-flow-date span {
+    @apply block text-sm font-semibold text-heritage-navy;
+  }
+
+  .timeline-flow-date strong {
+    @apply mt-1 block whitespace-nowrap text-xs font-semibold tabular-nums;
+    color: oklch(42% 0.11 25);
+  }
+
+  .timeline-flow-node-wrap {
+    @apply relative flex justify-center;
+  }
+
+  .timeline-flow-node-wrap::before {
+    @apply absolute bottom-0 top-0 w-px;
+    content: "";
+    background: oklch(var(--color-futuristic-teal) / 0.45);
+  }
+
+  .timeline-flow-group:first-child .timeline-flow-node-wrap::before {
+    top: 1rem;
+  }
+
+  .timeline-flow-group:last-child .timeline-flow-node-wrap::before {
+    bottom: calc(100% - 1rem);
+  }
+
+  .timeline-flow-node {
+    @apply relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 bg-white text-xs font-bold tabular-nums text-heritage-navy shadow-card;
+    border-color: oklch(var(--color-futuristic-teal) / 0.75);
+  }
+
+  .timeline-flow-group-complete .timeline-flow-node {
+    color: oklch(34% 0.07 178);
+    background: oklch(93.5% 0.045 178);
+  }
+
+  .timeline-flow-content {
+    @apply min-w-0 pb-6;
+  }
+
+  .timeline-flow-group:last-child .timeline-flow-content {
+    @apply pb-0;
+  }
+
+  .timeline-flow-group-head {
+    @apply mb-3 flex flex-col gap-2 rounded-hdb border border-heritage-navy/10 bg-white px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  .timeline-flow-group-head h4 {
+    @apply text-sm font-semibold text-heritage-navy;
+  }
+
+  .timeline-flow-group-head p,
+  .timeline-flow-group-head span {
+    @apply text-xs font-medium text-warm-stone;
+  }
+
+  .timeline-flow-cards {
+    @apply mt-3 grid list-none gap-3;
+  }
+
+  .timeline-flow-card {
+    @apply grid min-w-0 gap-4 rounded-hdb border border-heritage-navy/10 bg-white p-4 transition-transform duration-200 md:grid-cols-[minmax(0,1fr)_minmax(210px,0.38fr)];
+  }
+
+  .timeline-flow-card:hover {
+    transform: translateY(-1px);
+  }
+
+  .timeline-flow-card-payment {
+    background: oklch(99% 0.004 235);
+  }
+
+  .timeline-flow-card-complete {
+    background: oklch(98.8% 0.003 235);
+  }
+
+  .timeline-flow-card-complete h5,
+  .timeline-flow-card-complete .timeline-flow-card-main p {
+    @apply text-heritage-navy/60;
+  }
+
+  .timeline-flow-card-complete .timeline-board-payment,
+  .timeline-flow-card-complete .timeline-board-empty {
+    opacity: 0.74;
+  }
+
+  .timeline-flow-card-top {
+    @apply flex items-start gap-3;
+  }
+
+  .timeline-flow-step {
+    @apply mt-0.5 shrink-0 rounded-full px-2 py-1 text-xs font-bold tabular-nums text-heritage-navy;
+    background: oklch(95.5% 0.02 246);
+  }
+
+  .timeline-flow-card h5 {
+    @apply text-sm font-semibold text-heritage-navy;
+  }
+
+  .timeline-flow-card-main p {
+    @apply mt-1 text-xs leading-5 text-warm-stone;
+  }
+
+  .timeline-flow-card-side {
+    @apply grid min-w-0 content-start gap-2;
+  }
+
+  .timeline-flow-total {
+    @apply whitespace-nowrap text-right text-sm font-bold tabular-nums;
+    color: oklch(42% 0.11 25);
+  }
+
+  .timeline-complete-toggle {
+    @apply mt-3 inline-flex items-center gap-2 rounded-hdb px-2.5 py-1.5 text-xs font-semibold text-warm-stone ring-1 ring-heritage-navy/10 transition-colors hover:bg-heritage-navy/5;
+  }
+
+  .timeline-complete-box {
+    @apply h-3.5 w-3.5 rounded-sm border border-heritage-navy/25 bg-white;
+  }
+
+  .timeline-complete-toggle-on {
+    color: oklch(34% 0.07 178);
+    background: oklch(93.5% 0.045 178);
+  }
+
+  .timeline-complete-toggle-on .timeline-complete-box {
+    border-color: oklch(48% 0.08 184);
+    background: oklch(48% 0.08 184);
+    box-shadow: inset 0 0 0 3px oklch(93.5% 0.045 178);
+  }
+
+  .timeline-board-payment {
+    @apply rounded-hdb p-2.5;
+    background: white;
+    box-shadow: inset 0 0 0 1px oklch(var(--color-heritage-navy) / 0.08);
+  }
+
+  .timeline-board-split {
+    @apply mt-2 grid gap-2 text-xs sm:grid-cols-2;
+  }
+
+  .timeline-board-empty {
+    @apply rounded-hdb border border-dashed px-3 py-2 text-xs font-medium text-warm-stone;
+    background: oklch(99% 0.003 235);
+  }
+
+  .payment-mix-bar {
+    @apply flex h-2.5 overflow-hidden rounded-full;
+    background: oklch(var(--color-heritage-navy) / 0.08);
+  }
+
+  .payment-mix-segment {
+    @apply block h-full transition-[width] duration-300;
+    animation: payment-bar-in 240ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: left;
+  }
+
+  .payment-mix-cpf {
+    background: oklch(55% 0.085 178);
+  }
+
+  .payment-mix-cash {
+    background: oklch(55% 0.105 25);
+  }
+
+  .payment-mix-empty {
+    @apply h-full w-full bg-heritage-navy/10;
+  }
+
+  .payment-source {
+    @apply rounded-hdb px-2.5 py-2;
+    box-shadow: inset 0 0 0 1px oklch(var(--color-heritage-navy) / 0.08);
+  }
+
+  .payment-source-value {
+    @apply whitespace-nowrap font-semibold tabular-nums;
+  }
+
+  .payment-source-cpf {
+    color: oklch(31% 0.07 178);
+    background: oklch(93.5% 0.045 178);
+  }
+
+  .payment-source-cash {
+    color: oklch(38% 0.095 25);
+    background: oklch(95% 0.032 25);
+  }
+
+  .timeline-footnote {
+    @apply px-5 pb-5 pt-4 text-xs text-warm-stone md:px-6;
+  }
+
+  @media (max-width: 640px) {
+    .scenario-money-head {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .scenario-money-total {
+      @apply text-left;
+    }
+
+    .timeline-flow {
+      @apply px-3;
+    }
+
+    .timeline-flow-group {
+      grid-template-columns: 2rem minmax(0, 1fr);
+    }
+
+    .timeline-flow-date {
+      @apply flex items-baseline justify-between gap-3 pt-0 text-left;
+      grid-column: 2;
+    }
+
+    .timeline-flow-node-wrap {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+    }
+
+    .timeline-flow-node {
+      @apply h-7 w-7 text-[0.7rem];
+    }
+
+    .timeline-flow-content {
+      grid-column: 2;
+    }
+
+    .timeline-flow-group-head {
+      @apply px-3;
+    }
+
+    .timeline-flow-card {
+      @apply p-3;
+    }
+
+    .timeline-flow-card-top {
+      @apply gap-2;
+    }
   }
 }
 
@@ -81,5 +655,25 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes payment-bar-in {
+  from {
+    transform: scaleX(0.35);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bto-reveal,
+  .timeline-flow-card,
+  .timeline-complete-toggle,
+  .payment-mix-segment {
+    animation: none;
+    transition: none;
   }
 }

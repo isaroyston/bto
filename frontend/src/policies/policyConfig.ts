@@ -61,6 +61,56 @@ export interface BtoFlatVariant {
   priceNote?: string;
 }
 
+export interface BtoUnitSupply {
+  projectId?: number;
+  town?: string;
+  flatType?: BtoFlatVariant["type"] | string;
+  flatTypeDesc?: string;
+  unitsOffered?: number;
+  unitsAvailable?: number;
+  applicants?: number;
+  rates?: {
+    elderly?: number;
+    firstTimers?: number;
+    secondTimers?: number;
+    singles?: number;
+    overall?: number;
+  };
+  queueNo?: number;
+  isMatureTown?: boolean;
+  status?: string;
+  isDisplay?: boolean;
+  updatedAt?: string;
+}
+
+export interface BtoHqProjectMeta {
+  projectSpecId?: number;
+  salesLaunchId?: number;
+  launchName?: string;
+  launchSourceUrl?: string;
+  classification?: string;
+  btohqTypeCode?: number;
+  isPLH?: boolean;
+  noOfBlocks?: number;
+  highestFloor?: number;
+  tenure?: string;
+  developer?: string;
+  unitTypesText?: string;
+  availableFlatTypes?: BtoFlatVariant["type"][];
+  unitSupply?: BtoUnitSupply[];
+  ratings?: {
+    accessibility?: number;
+    amenities?: number;
+    affordability?: number;
+  };
+  nearbyAmenities?: Record<string, string | undefined>;
+  media?: Record<string, unknown>;
+  construction?: Record<string, unknown>;
+  metaDescription?: string;
+  descriptionText?: string;
+  sourceUrl?: string;
+}
+
 export interface BtoProject {
   id: string;
   launchMonth: string; // YYYY-MM or FY label
@@ -70,8 +120,8 @@ export interface BtoProject {
   flatVariants: BtoFlatVariant[];
   suggestedFinancing?: "hdb" | "bank"; // Most common for this project
   suggestedScheme?: "normal" | "staggered" | "dia"; // Most accessible
-  dataSource?: "recordbto";
-  schemeSource?: "recordbto";
+  dataSource?: "recordbto" | "btohq" | "recordbto+btohq";
+  schemeSource?: "recordbto" | "btohq";
   status?: string;
   address?: string;
   btoType?: string;
@@ -83,6 +133,9 @@ export interface BtoProject {
   nearestMrt?: string;
   constructionProgress?: number;
   sourceUrl?: string;
+  unitTypes?: string;
+  availableFlatTypes?: BtoFlatVariant["type"][];
+  btohq?: BtoHqProjectMeta;
 }
 
 const CPF_CONTRIBUTION_BANDS_2026: ContributionBand[] = [

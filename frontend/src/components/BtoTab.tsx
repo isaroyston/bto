@@ -345,8 +345,8 @@ function ProjectCard({
           : "border-heritage-navy/10 bg-white hover:border-heritage-navy/20"
       }`}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             {project.sourceUrl ? (
               <a
@@ -366,7 +366,9 @@ function ProjectCard({
         </div>
         <button
           type="button"
-          className={isSelected ? "btn-primary px-3 py-1.5" : "btn-secondary px-3 py-1.5"}
+          className={`inline-flex min-h-9 min-w-[98px] shrink-0 items-center justify-center whitespace-nowrap px-3 py-1.5 ${
+            isSelected ? "btn-primary" : "btn-secondary"
+          }`}
           title="Use this project in your payment plan"
           onClick={() => onSelectProject(project.id)}
         >
@@ -462,8 +464,15 @@ function getSelectedVariant(project: BtoProject, flatType: FlatType) {
 }
 
 function formatFlatSizes(project: BtoProject) {
-  if (project.flatVariants.length === 0) return "Not listed";
-  return project.flatVariants.map((variant) => variant.type).join(", ");
+  if (project.flatVariants.length > 0) {
+    return project.flatVariants.map((variant) => variant.type).join(", ");
+  }
+
+  if (project.availableFlatTypes?.length) {
+    return project.availableFlatTypes.join(", ");
+  }
+
+  return project.unitTypes ?? "Not listed";
 }
 
 function formatProjectType(type: string | undefined) {
