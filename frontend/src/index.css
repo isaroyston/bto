@@ -20,6 +20,12 @@
     --good: oklch(34% 0.08 178);
     --good-soft: oklch(93.2% 0.045 178);
     --cash: oklch(52% 0.12 26);
+    --badge-prime-bg: oklch(91% 0.105 82);
+    --badge-prime-text: oklch(28% 0.07 67);
+    --badge-plus-bg: oklch(91% 0.07 248);
+    --badge-plus-text: oklch(31% 0.09 255);
+    --badge-standard-bg: oklch(91% 0.07 154);
+    --badge-standard-text: oklch(29% 0.075 154);
     --nav-bg: oklch(98.5% 0.006 235 / 0.9);
     --page-bg:
       radial-gradient(circle at 8% 0%, oklch(92% 0.03 188 / 0.82), transparent 22rem),
@@ -44,6 +50,12 @@
     --good: oklch(78% 0.105 172);
     --good-soft: oklch(32% 0.06 176);
     --cash: oklch(75% 0.12 28);
+    --badge-prime-bg: oklch(38% 0.105 78);
+    --badge-prime-text: oklch(88% 0.12 84);
+    --badge-plus-bg: oklch(36% 0.075 250);
+    --badge-plus-text: oklch(84% 0.08 246);
+    --badge-standard-bg: oklch(34% 0.065 154);
+    --badge-standard-text: oklch(84% 0.09 154);
     --nav-bg: oklch(17% 0.02 248 / 0.86);
     --page-bg:
       radial-gradient(circle at 8% 0%, oklch(36% 0.065 188 / 0.35), transparent 25rem),
@@ -198,18 +210,21 @@
   }
 
   .project-type-badge-prime {
-    background: oklch(var(--color-electric-mint) / 0.16);
-    color: oklch(var(--color-electric-mint));
+    background: var(--badge-prime-bg);
+    color: var(--badge-prime-text);
+    box-shadow: inset 0 0 0 1px oklch(55% 0.12 82 / 0.25);
   }
 
   .project-type-badge-plus {
-    background: oklch(var(--color-futuristic-teal) / 0.16);
-    color: oklch(var(--color-futuristic-teal));
+    background: var(--badge-plus-bg);
+    color: var(--badge-plus-text);
+    box-shadow: inset 0 0 0 1px oklch(48% 0.09 250 / 0.22);
   }
 
   .project-type-badge-standard {
-    background: var(--good-soft);
-    color: var(--good);
+    background: var(--badge-standard-bg);
+    color: var(--badge-standard-text);
+    box-shadow: inset 0 0 0 1px oklch(47% 0.085 154 / 0.22);
   }
 
   .overview-source-note {
