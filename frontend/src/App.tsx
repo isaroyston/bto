@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BtoTab } from "./components/BtoTab";
 import { Navigation } from "./components/Navigation";
 import { OverviewTab } from "./components/OverviewTab";
@@ -6,13 +6,26 @@ import { PurchasePlanTab } from "./components/PurchasePlanTab";
 import {
   FLAT_MAX,
   FLAT_MIN,
+  BANK_LOAN_TENURE_MAX,
+  DEFAULT_LOAN_INTEREST_RATE,
+  DEFAULT_LOAN_TENURE_YEARS,
+  HDB_LOAN_TENURE_MAX,
   INCOME_MAX,
   INCOME_MIN,
+  LOAN_INTEREST_RATE_MAX,
+  LOAN_INTEREST_RATE_MIN,
   LOAN_MULTIPLIER,
+  LOAN_TENURE_MIN,
 } from "./constants";
 import { useBtoProjects } from "./hooks/useBtoProjects";
 import { POLICY_CONFIG } from "./policies/policyConfig";
-import type { FinancingType, FlatType, SchemeType, TabKey } from "./types";
+import type {
+  FinancingType,
+  FlatType,
+  SchemeType,
+  TabKey,
+  ThemeMode,
+} from "./types";
 import {
   filterBtoProjects,
   getActiveYear,
@@ -27,6 +40,8 @@ import {
   loadPlannerSnapshot,
   savePlannerSnapshot,
 } from "./utils/planStorage";
+
+const THEME_STORAGE_KEY = "hdb-planner:theme-mode";
 
 function App() {
   const [initialPlanResult] = useState(() => {
@@ -45,6 +60,7 @@ function App() {
   const initialPlan = initialPlanResult.snapshot;
 
   const [activeTab, setActiveTabState] = useState<TabKey>(getInitialTab());
+  const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialThemeMode);
   const [combinedIncome, setCombinedIncome] = useState(
     initialPlan?.combinedIncome ?? 6000
   );
@@ -57,6 +73,12 @@ function App() {
   );
   const [scheme, setScheme] = useState<SchemeType>(
     initialPlan?.scheme ?? "normal"
+  );
+  const [loanTenureYears, setLoanTenureYears] = useState(
+    initialPlan?.loanTenureYears ?? DEFAULT_LOAN_TENURE_YEARS
+  );
+  const [loanInterestRate, setLoanInterestRate] = useState(
+    initialPlan?.loanInterestRate ?? DEFAULT_LOAN_INTEREST_RATE
   );
   const [yearFilter, setYearFilter] = useState(
     initialPlan?.yearFilter ?? "latest"
@@ -81,6 +103,9 @@ function App() {
   const [completedMilestones, setCompletedMilestones] = useState<string[]>(
     initialPlan?.completedMilestones ?? []
   );
+  const [confirmedMilestoneDates, setConfirmedMilestoneDates] = useState<
+    Record<string, string>
+  >(initialPlan?.confirmedMilestoneDates ?? {});
 
   const {
     projects: btoProjects,
@@ -102,11 +127,19 @@ function App() {
   const optionFee = POLICY_CONFIG.fees.optionFeeByFlatType[flatType];
   const surveyFee = POLICY_CONFIG.fees.surveyFeeByFlatType[flatType];
   const fireInsurance = POLICY_CONFIG.fees.fireInsuranceByFlatType[flatType];
+  const selectedBtoProject = useMemo(
+    () =>
+      selectedBtoProjectId
+        ? btoProjects.find((project) => project.id === selectedBtoProjectId) ?? null
+        : null,
+    [btoProjects, selectedBtoProjectId]
+  );
 
   const timeline = useMemo(
     () =>
       buildPaymentTimeline({
         applicationMonth,
+        expectedTop: selectedBtoProject?.expectedTop,
         flatType,
         signingAmount,
         signingCpf,
@@ -125,6 +158,7 @@ function App() {
       keyCpf,
       minCashSigning,
       optionFee,
+      selectedBtoProject?.expectedTop,
       signingAmount,
       signingCpf,
       surveyFee,
@@ -134,6 +168,15 @@ function App() {
     const timelineLabels = new Set(timeline.map((item) => item.label));
     return completedMilestones.filter((label) => timelineLabels.has(label));
   }, [completedMilestones, timeline]);
+  const activeConfirmedMilestoneDates = useMemo(() => {
+    const timelineLabels = new Set(timeline.map((item) => item.label));
+
+    return Object.fromEntries(
+      Object.entries(confirmedMilestoneDates).filter(([label]) =>
+        timelineLabels.has(label)
+      )
+    );
+  }, [confirmedMilestoneDates, timeline]);
 
   const availableYears = useMemo(
     () => getAvailableYears(btoProjects),
@@ -147,13 +190,11 @@ function App() {
     () => filterBtoProjects(btoProjects, activeYear, townQuery, flatType),
     [activeYear, btoProjects, flatType, townQuery]
   );
-  const selectedBtoProject = useMemo(
-    () =>
-      selectedBtoProjectId
-        ? btoProjects.find((project) => project.id === selectedBtoProjectId) ?? null
-        : null,
-    [btoProjects, selectedBtoProjectId]
-  );
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = themeMode;
+    window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
+  }, [themeMode]);
 
   const setActiveTab = (tab: TabKey) => {
     setActiveTabState(tab);
@@ -195,12 +236,47 @@ function App() {
     setFlatPrice(clampNumber(value, FLAT_MIN, FLAT_MAX));
   };
 
+  const handleFinancingChange = (value: FinancingType) => {
+    setFinancing(value);
+    setLoanTenureYears((current) =>
+      clampNumber(current, LOAN_TENURE_MIN, getLoanTenureMax(value))
+    );
+  };
+
+  const handleLoanTenureChange = (value: number) => {
+    if (Number.isNaN(value)) return;
+    setLoanTenureYears(
+      clampNumber(value, LOAN_TENURE_MIN, getLoanTenureMax(financing))
+    );
+  };
+
+  const handleLoanInterestRateChange = (value: number) => {
+    if (Number.isNaN(value)) return;
+    setLoanInterestRate(
+      clampNumber(value, LOAN_INTEREST_RATE_MIN, LOAN_INTEREST_RATE_MAX)
+    );
+  };
+
   const handleToggleMilestoneComplete = (label: string) => {
     setCompletedMilestones((current) =>
       current.includes(label)
         ? current.filter((item) => item !== label)
         : [...current, label]
     );
+  };
+
+  const handleMilestoneDateChange = (label: string, value: string) => {
+    setConfirmedMilestoneDates((current) => {
+      const next = { ...current };
+
+      if (value) {
+        next[label] = value;
+      } else {
+        delete next[label];
+      }
+
+      return next;
+    });
   };
 
   const buildCurrentSnapshot = () =>
@@ -210,11 +286,14 @@ function App() {
       flatType,
       financing,
       scheme,
+      loanTenureYears,
+      loanInterestRate,
       yearFilter,
       townQuery,
       selectedBtoProjectId,
       applicationMonth,
       completedMilestones: activeCompletedMilestones,
+      confirmedMilestoneDates: activeConfirmedMilestoneDates,
     });
 
   const handleSavePlan = () => {
@@ -239,6 +318,7 @@ function App() {
 
     setSelectedBtoProjectId(project.id);
     setCompletedMilestones([]);
+    setConfirmedMilestoneDates({});
 
     if (preferredVariant) {
       setFlatType(preferredVariant.type);
@@ -252,10 +332,15 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-hdb-bg text-heritage-navy">
-      <Navigation activeTab={activeTab} onSelectTab={setActiveTab} />
+    <div className="app-shell min-h-screen bg-hdb-bg text-heritage-navy">
+      <Navigation
+        activeTab={activeTab}
+        themeMode={themeMode}
+        onSelectTab={setActiveTab}
+        onThemeModeChange={setThemeMode}
+      />
 
-      <main className="mx-auto w-full max-w-[1360px] min-w-0 space-y-8 overflow-x-hidden px-5 pb-14 pt-24 md:px-8 lg:px-10">
+      <main className="mx-auto w-full max-w-[1720px] min-w-0 space-y-8 overflow-x-hidden px-5 pb-14 pt-24 md:px-8 lg:px-10 xl:px-12">
         {activeTab === "overview" && (
           <OverviewTab
             combinedIncome={combinedIncome}
@@ -281,6 +366,8 @@ function App() {
             flatType={flatType}
             financing={financing}
             scheme={scheme}
+            loanTenureYears={loanTenureYears}
+            loanInterestRate={loanInterestRate}
             signingAmount={signingAmount}
             keyAmount={keyAmount}
             minCashSigning={minCashSigning}
@@ -290,16 +377,20 @@ function App() {
             downpaymentNote={downpaymentRule.note}
             timeline={timeline}
             completedMilestones={activeCompletedMilestones}
+            confirmedMilestoneDates={activeConfirmedMilestoneDates}
             planStorageStatus={planStorageStatus}
             planStorageError={planStorageError}
             onIncomeChange={handleIncomeChange}
             onFlatPriceChange={handleFlatPriceChange}
             onFlatTypeChange={setFlatType}
-            onFinancingChange={setFinancing}
+            onFinancingChange={handleFinancingChange}
             onSchemeChange={setScheme}
+            onLoanTenureChange={handleLoanTenureChange}
+            onLoanInterestRateChange={handleLoanInterestRateChange}
             onOpenBtoRadar={() => setActiveTab("bto")}
             onSavePlan={handleSavePlan}
             onToggleMilestoneComplete={handleToggleMilestoneComplete}
+            onMilestoneDateChange={handleMilestoneDateChange}
           />
         )}
 
@@ -347,6 +438,19 @@ function getDefaultApplicationMonth() {
 function getInitialTab(): TabKey {
   const tab = new URLSearchParams(window.location.search).get("tab");
   return tab === "plan" || tab === "bto" || tab === "overview" ? tab : "overview";
+}
+
+function getInitialThemeMode(): ThemeMode {
+  const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+  if (savedTheme === "light" || savedTheme === "dark") return savedTheme;
+
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+}
+
+function getLoanTenureMax(financing: FinancingType) {
+  return financing === "hdb" ? HDB_LOAN_TENURE_MAX : BANK_LOAN_TENURE_MAX;
 }
 
 function getErrorMessage(error: unknown) {

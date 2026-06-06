@@ -6,6 +6,10 @@ import {
 import { FactItem } from "./FactItem";
 import type { FlatType, TabKey } from "../types";
 import { currency } from "../utils/format";
+import {
+  getBtoProjectSourceLabel,
+  getBtoProjectSourceNote,
+} from "../utils/sourceCredits";
 
 type OverviewTabProps = {
   combinedIncome: number;
@@ -39,86 +43,134 @@ export function OverviewTab({
       : 0;
 
   return (
-    <section className="space-y-5">
+    <section
+      className={`overview-page ${hasProject ? "overview-page-ready" : "overview-page-empty"}`}
+    >
       <header className="overview-page-head">
         <div>
           <h1 className="text-2xl font-semibold text-heritage-navy md:text-3xl">
-            Planner overview
+            Your BTO at a glance
           </h1>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-warm-stone">
-            See the current BTO, price, loan, grant, and next steps before you
-            drill into Plan or BTO Radar.
+            Price, grant, loan, and next milestones, without the spreadsheet fog.
           </p>
         </div>
       </header>
 
-      <section className="panel overview-hero">
-        <div className="overview-hero-main">
-          <span
-            className={`overview-status-chip ${
-              hasProject ? "overview-status-ready" : "overview-status-missing"
-            }`}
-          >
-            {hasProject ? "Project selected" : "Project needed"}
-          </span>
-          <h2 className="mt-3 text-2xl font-semibold text-heritage-navy">
-            {selectedProject?.name ?? "Choose a BTO project to start"}
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-warm-stone">
-            {selectedProject
-              ? `${selectedProject.location}, launched ${selectedProject.launchMonth}. The planner is using this project for price, flat type, and milestone estimates.`
-              : "BTO Radar can prefill project context, flat price, launch month, and expected completion so the payment plan starts from real project data."}
-          </p>
-          <div className="overview-hero-actions">
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={() => onSelectTab(hasProject ? "plan" : "bto")}
+      <div className="overview-grid">
+        <section
+          className={`panel overview-hero ${
+            hasProject ? "overview-hero-ready" : "overview-hero-empty"
+          }`}
+        >
+          <div className="overview-hero-main">
+            <span
+              className={`overview-status-chip ${
+                hasProject ? "overview-status-ready" : "overview-status-missing"
+              }`}
             >
-              {hasProject ? "Review plan" : "Choose project"}
-            </button>
+              {hasProject ? "Project selected" : "Start here"}
+            </span>
+            <h2 className="mt-3 text-2xl font-semibold text-heritage-navy">
+              {selectedProject?.name ?? "Pick a project to unlock the plan"}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-warm-stone">
+              {selectedProject
+                ? `${selectedProject.location}, launched ${selectedProject.launchMonth}.`
+                : "Choose from BTO Radar once. The overview will stop guessing and start using real project context."}
+            </p>
+            <div className="overview-hero-actions">
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => onSelectTab(hasProject ? "plan" : "bto")}
+              >
+                {hasProject ? "Review plan" : "Choose project"}
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div className="overview-price-stack">
-          <p className="text-sm font-medium text-warm-stone">Target flat price</p>
-          <p className="overview-price">{currency(flatPrice)}</p>
-          <div className="overview-price-meta">
-            <span>{flatType}</span>
-            <span>{selectedProject?.expectedTop ?? "TOP not listed"}</span>
-          </div>
-        </div>
-      </section>
+          {hasProject ? (
+            <div className="overview-price-stack">
+              <p className="text-sm font-medium text-warm-stone">Target flat price</p>
+              <p className="overview-price">{currency(flatPrice)}</p>
+              <div className="overview-price-meta">
+                <span>{flatType}</span>
+                <span>{selectedProject?.expectedTop ?? "TOP not listed"}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="overview-waiting-stack">
+              <p className="text-sm font-semibold text-heritage-navy">
+                Needs a project
+              </p>
+              <div className="overview-waiting-list">
+                <span>Target price</span>
+                <span>Expected TOP</span>
+                <span>Launch month</span>
+              </div>
+              <p className="text-xs leading-5 text-warm-stone">
+                Plan still works with defaults, but project data makes the numbers useful.
+              </p>
+            </div>
+          )}
+        </section>
 
-      <section className="panel overview-stat-panel" aria-label="Planning figures">
-        <OverviewStat
-          label="Estimated loan"
-          value={currency(loanAmount)}
-          detail={`Based on ${currency(combinedIncome)} monthly income`}
-        />
-        <OverviewStat
-          label="EHG grant"
-          value={currency(ehgGrant)}
-          detail={ehgBand ? ehgBand.label : "Above EHG ceiling"}
-          tone="grant"
-        />
-        <OverviewStat
-          label="Current assumption"
-          value={currency(combinedIncome)}
-          detail="Edit income, price, financing, and scheme in Plan"
-        />
-      </section>
+        {hasProject ? (
+          <section className="panel overview-stat-panel" aria-label="Planning figures">
+            <OverviewStat
+              label="Estimated loan"
+              value={currency(loanAmount)}
+              detail={`Target ${currency(flatPrice)}`}
+            />
+            <OverviewStat
+              label="EHG grant"
+              value={currency(ehgGrant)}
+              detail={ehgBand ? ehgBand.label : "Above EHG ceiling"}
+              tone="grant"
+            />
+            <OverviewStat
+              label="Income"
+              value={currency(combinedIncome)}
+              detail="Loan and grant basis"
+            />
+          </section>
+        ) : (
+          <section className="panel overview-onboarding-panel" aria-label="Overview setup">
+            <div>
+              <h2 className="text-base font-semibold text-heritage-navy">
+                Start with one decision
+              </h2>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-warm-stone">
+                Select a launch first. Fine-tune the household numbers after.
+              </p>
+            </div>
+            <div className="overview-onboarding-grid">
+              <SetupStep
+                label="Project"
+                value="Choose a BTO launch"
+                detail="Sets price, TOP, location, and application month."
+              />
+              <SetupStep
+                label="Household"
+                value={`${currency(combinedIncome)} income now`}
+                detail="Updates loan and EHG estimates after the project is anchored."
+              />
+              <SetupStep
+                label="Plan"
+                value={`${flatType}, ${currency(flatPrice)}`}
+                detail="Current placeholder until a project flat type is selected."
+              />
+            </div>
+          </section>
+        )}
 
-      <div className="overview-main-grid">
         <section className="panel overview-progress-panel">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="text-base font-semibold text-heritage-navy">
-                Milestone progress
+                Milestones
               </h2>
-              <p className="mt-1 text-sm leading-6 text-warm-stone">
-                Completion is marked from the Plan timeline cards.
-              </p>
             </div>
             <span className="overview-progress-count">
               {completedMilestoneCount}/{totalMilestoneCount}
@@ -130,9 +182,13 @@ export function OverviewTab({
           <p className="text-sm font-medium text-heritage-navy">
             {progressPercent}% complete
           </p>
-          <div className="overview-progress-notes">
-            <span>{hasProject ? "Project timeline active" : "Select a project first"}</span>
-            <span>Included when you save</span>
+          <div className="overview-progress-note">
+            {hasProject
+              ? `${Math.max(
+                  totalMilestoneCount - completedMilestoneCount,
+                  0
+                )} open`
+              : "Pick a project to generate milestones."}
           </div>
         </section>
 
@@ -141,31 +197,48 @@ export function OverviewTab({
           flatType={flatType}
           flatPrice={flatPrice}
         />
-      </div>
 
-      <section className="panel overview-policy-panel">
-        <div>
-          <h2 className="text-base font-semibold text-heritage-navy">
-            Policy basis
-          </h2>
-          <p className="mt-1 text-sm leading-6 text-warm-stone">
-            Loan and grant figures are estimates for planning, not eligibility
-            approval.
+        {!hasProject && (
+          <section className="panel overview-action-panel">
+            <h2 className="text-base font-semibold text-heritage-navy">
+              What happens after selection
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-warm-stone">
+              Price, TOP, and key milestones update from the selected project.
+            </p>
+            <button
+              type="button"
+              className="btn-secondary mt-4"
+              onClick={() => onSelectTab("bto")}
+            >
+              Open BTO Radar
+            </button>
+          </section>
+        )}
+
+        <section className="panel overview-policy-panel">
+          <div>
+            <h2 className="text-base font-semibold text-heritage-navy">
+              Policy basis
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-warm-stone">
+              Planning estimates only. Final eligibility comes from the official process.
+            </p>
+          </div>
+          <div className="overview-policy-grid">
+            <PolicyFact label="Grant scheme" value="First-timer family EHG" />
+            <PolicyFact label="Loan basis" value="HDB loan planning figure" />
+            <PolicyFact label="Effective date" value={EHG_FAMILIES_POLICY_META.effectiveDate} />
+            <PolicyFact
+              label="Last verified"
+              value={EHG_FAMILIES_POLICY_META.lastVerified}
+            />
+          </div>
+          <p className="text-xs leading-5 text-warm-stone">
+            Source: {EHG_FAMILIES_POLICY_META.sourceDocument}.
           </p>
-        </div>
-        <div className="overview-policy-grid">
-          <PolicyFact label="Grant scheme" value="First-timer family EHG" />
-          <PolicyFact label="Loan basis" value="HDB loan planning figure" />
-          <PolicyFact label="Effective date" value={EHG_FAMILIES_POLICY_META.effectiveDate} />
-          <PolicyFact
-            label="Last verified"
-            value={EHG_FAMILIES_POLICY_META.lastVerified}
-          />
-        </div>
-        <p className="text-xs leading-5 text-warm-stone">
-          Source: {EHG_FAMILIES_POLICY_META.sourceDocument}.
-        </p>
-      </section>
+        </section>
+      </div>
     </section>
   );
 }
@@ -196,6 +269,24 @@ function OverviewStat({
   );
 }
 
+function SetupStep({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+}) {
+  return (
+    <div className="overview-setup-step">
+      <p className="text-xs font-medium text-warm-stone">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-heritage-navy">{value}</p>
+      <p className="mt-1 text-xs leading-5 text-warm-stone">{detail}</p>
+    </div>
+  );
+}
+
 function ProjectContextPanel({
   selectedProject,
   flatType,
@@ -213,7 +304,7 @@ function ProjectContextPanel({
             Project context
           </h2>
           <p className="mt-1 text-sm leading-6 text-warm-stone">
-            The details currently feeding the Plan tab.
+            What the planner is using now.
           </p>
         </div>
       </div>
@@ -221,6 +312,10 @@ function ProjectContextPanel({
       {selectedProject ? (
         <div className="overview-fact-grid">
           <FactItem label="Selected flat" value={`${flatType}, ${currency(flatPrice)}`} />
+          <FactItem
+            label="Project data"
+            value={getBtoProjectSourceLabel(selectedProject)}
+          />
           <FactItem
             label="Expected TOP"
             value={selectedProject.expectedTop ?? "Not listed"}
@@ -236,6 +331,14 @@ function ProjectContextPanel({
             label="Nearest MRT"
             value={selectedProject.nearestMrt ?? "Not listed"}
           />
+          <div className="overview-source-note">
+            <span>{getBtoProjectSourceNote(selectedProject)}</span>
+            {selectedProject.sourceUrl && (
+              <a href={selectedProject.sourceUrl} target="_blank" rel="noreferrer">
+                View source
+              </a>
+            )}
+          </div>
         </div>
       ) : (
         <div className="overview-empty-state">
@@ -243,8 +346,7 @@ function ProjectContextPanel({
             No project selected yet
           </h3>
           <p className="mt-1 text-sm leading-6 text-warm-stone">
-            Choose a project from BTO Radar and this area will show TOP, unit
-            count, flat type, and nearest MRT.
+            Choose a BTO project to show TOP, unit count, flat type, and nearest MRT.
           </p>
         </div>
       )}

@@ -1,9 +1,16 @@
 import { POLICY_CONFIG } from "../policies/policyConfig";
 import type { FlatType, TimelineItem, TimelinePayment } from "../types";
-import { addMonths, addWeeks, formatMonthYear, parseMonth } from "./date";
+import {
+  addMonths,
+  addWeeks,
+  formatMonthYear,
+  parseMonth,
+  parseMonthYearDate,
+} from "./date";
 
 type PaymentTimelineInput = {
   applicationMonth: string;
+  expectedTop?: string | null;
   flatType: FlatType;
   signingAmount: number;
   signingCpf: number;
@@ -17,6 +24,7 @@ type PaymentTimelineInput = {
 
 export function buildPaymentTimeline({
   applicationMonth,
+  expectedTop,
   flatType,
   signingAmount,
   signingCpf,
@@ -37,10 +45,13 @@ export function buildPaymentTimeline({
     booking,
     POLICY_CONFIG.defaultOffsets.agreementAfterBookingMonths
   );
-  const key = addMonths(
+  const fallbackKey = addMonths(
     booking,
     POLICY_CONFIG.defaultOffsets.keyAfterBookingMonths
   );
+  const expectedTopDate = parseMonthYearDate(expectedTop);
+  const key = expectedTopDate ?? fallbackKey;
+  const keyDateBasis = expectedTopDate ? "expected TOP" : "default BTO offset";
 
   const applicationPayment: TimelinePayment = {
     label: "Application fee",
@@ -89,11 +100,6 @@ export function buildPaymentTimeline({
       payment: applicationPayment,
     },
     {
-      label: "Ballot result",
-      date: formatMonthYear(ballot),
-      note: "First ballot outcome.",
-    },
-    {
       label: "Flat booking",
       date: formatMonthYear(booking),
       note: "Choose a unit and pay the option fee.",
@@ -108,7 +114,7 @@ export function buildPaymentTimeline({
     {
       label: "Key collection",
       date: formatMonthYear(key),
-      note: "Make final payments and collect keys.",
+      note: `Make final payments and collect keys. Date follows ${keyDateBasis}.`,
       payment: keyPayment,
     },
     {

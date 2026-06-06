@@ -4,8 +4,15 @@ import {
   FLAT_TYPE_OPTIONS,
   INCOME_MAX,
   INCOME_MIN,
+  DEFAULT_LOAN_INTEREST_RATE,
+  DEFAULT_LOAN_TENURE_YEARS,
+  LOAN_INTEREST_RATE_MAX,
+  LOAN_INTEREST_RATE_MIN,
+  LOAN_TENURE_MIN,
+  BANK_LOAN_TENURE_MAX,
 } from "../constants";
 import type { FinancingType, FlatType, SchemeType } from "../types";
+import { isDateInputValue } from "./date";
 import { clampNumber } from "./format";
 
 export const PLANNER_STORAGE_KEY = "hdb-planner:saved-plan";
@@ -23,11 +30,14 @@ export type PlannerSnapshot = {
   flatType: FlatType;
   financing: FinancingType;
   scheme: SchemeType;
+  loanTenureYears: number;
+  loanInterestRate: number;
   yearFilter: string;
   townQuery: string;
   selectedBtoProjectId: string | null;
   applicationMonth: string;
   completedMilestones: string[];
+  confirmedMilestoneDates: Record<string, string>;
 };
 
 type PlannerSnapshotInput = Omit<PlannerSnapshot, "version" | "savedAt">;
@@ -95,6 +105,18 @@ export function parsePlannerSnapshot(raw: string): PlannerSnapshot {
     flatType,
     financing,
     scheme,
+    loanTenureYears: parseBoundedNumberWithDefault(
+      parsed.loanTenureYears,
+      LOAN_TENURE_MIN,
+      BANK_LOAN_TENURE_MAX,
+      DEFAULT_LOAN_TENURE_YEARS
+    ),
+    loanInterestRate: parseBoundedNumberWithDefault(
+      parsed.loanInterestRate,
+      LOAN_INTEREST_RATE_MIN,
+      LOAN_INTEREST_RATE_MAX,
+      DEFAULT_LOAN_INTEREST_RATE
+    ),
     yearFilter:
       typeof parsed.yearFilter === "string" && parsed.yearFilter
         ? parsed.yearFilter
@@ -106,6 +128,7 @@ export function parsePlannerSnapshot(raw: string): PlannerSnapshot {
         : null,
     applicationMonth: parseApplicationMonth(parsed.applicationMonth),
     completedMilestones: parseStringArray(parsed.completedMilestones),
+    confirmedMilestoneDates: parseDateMap(parsed.confirmedMilestoneDates),
   };
 }
 
@@ -162,11 +185,35 @@ function parseBoundedNumber(
   return clampNumber(parsed, min, max);
 }
 
+function parseBoundedNumberWithDefault(
+  value: unknown,
+  min: number,
+  max: number,
+  fallback: number
+) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? clampNumber(parsed, min, max) : fallback;
+}
+
 function parseStringArray(value: unknown) {
   if (!Array.isArray(value)) return [];
 
   return value.filter(
     (item): item is string => typeof item === "string" && item.length > 0
+  );
+}
+
+function parseDateMap(value: unknown) {
+  if (!isRecord(value)) return {};
+
+  return Object.fromEntries(
+    Object.entries(value).filter(
+      (entry): entry is [string, string] =>
+        typeof entry[0] === "string" &&
+        typeof entry[1] === "string" &&
+        entry[0].length > 0 &&
+        isDateInputValue(entry[1])
+    )
   );
 }
 

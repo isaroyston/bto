@@ -42,6 +42,18 @@ export const addWeeks = (date: Date, weeks: number) =>
 export const formatMonthYear = (date: Date) =>
   date.toLocaleString("en-SG", { month: "short", year: "numeric" });
 
+export const formatDateInputDisplay = (value: string) => {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+    .toLocaleDateString("en-SG", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+};
+
 export const parseLaunchMonth = (value: string) => {
   const yearMatch = value.match(/(19|20)\d{2}/);
   const monthMatch = value.match(/[A-Za-z]+/);
@@ -59,6 +71,16 @@ export const parseLaunchMonthInput = (value: string) => {
 
   return `${parsed.year}-${String(parsed.monthIndex + 1).padStart(2, "0")}`;
 };
+
+export const parseMonthYearDate = (value: string | undefined | null) => {
+  if (!value) return null;
+
+  const parsed = parseLaunchMonth(value);
+  return parsed ? new Date(parsed.year, parsed.monthIndex, 1) : null;
+};
+
+export const isDateInputValue = (value: string) =>
+  /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(value);
 
 export const getLaunchMonthSortValue = (value: string) => {
   const parsed = parseLaunchMonth(value);

@@ -4,20 +4,70 @@
 
 @layer base {
   :root {
-    --color-hdb-bg: 97.8% 0.004 235;
-    --color-heritage-navy: 25% 0.034 247;
-    --color-warm-stone: 46% 0.018 245;
-    --color-futuristic-teal: 48% 0.08 184;
-    --color-electric-mint: 63% 0.085 170;
+    color-scheme: light;
+    --color-hdb-bg: 96.5% 0.008 235;
+    --color-heritage-navy: 20% 0.04 247;
+    --color-warm-stone: 35% 0.022 245;
+    --color-futuristic-teal: 42% 0.085 184;
+    --color-electric-mint: 55% 0.1 170;
+    --surface: oklch(100% 0 0);
+    --surface-raised: oklch(99% 0.004 235);
+    --surface-soft: oklch(96.8% 0.014 215);
+    --surface-strong: oklch(20% 0.04 247);
+    --line: oklch(20% 0.04 247 / 0.13);
+    --line-strong: oklch(20% 0.04 247 / 0.24);
+    --money: oklch(37% 0.115 27);
+    --good: oklch(34% 0.08 178);
+    --good-soft: oklch(93.2% 0.045 178);
+    --cash: oklch(52% 0.12 26);
+    --nav-bg: oklch(98.5% 0.006 235 / 0.9);
+    --page-bg:
+      radial-gradient(circle at 8% 0%, oklch(92% 0.03 188 / 0.82), transparent 22rem),
+      linear-gradient(180deg, oklch(98.4% 0.006 225), oklch(var(--color-hdb-bg)) 26rem);
+    --soft-shadow: 0 1px 2px oklch(20% 0.04 247 / 0.08);
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --color-hdb-bg: 16% 0.018 248;
+    --color-heritage-navy: 92% 0.012 236;
+    --color-warm-stone: 74% 0.02 238;
+    --color-futuristic-teal: 72% 0.09 184;
+    --color-electric-mint: 79% 0.1 170;
+    --surface: oklch(23% 0.022 248);
+    --surface-raised: oklch(27% 0.025 248);
+    --surface-soft: oklch(30% 0.03 244);
+    --surface-strong: oklch(92% 0.012 236);
+    --line: oklch(92% 0.012 236 / 0.14);
+    --line-strong: oklch(92% 0.012 236 / 0.24);
+    --money: oklch(76% 0.13 38);
+    --good: oklch(78% 0.105 172);
+    --good-soft: oklch(32% 0.06 176);
+    --cash: oklch(75% 0.12 28);
+    --nav-bg: oklch(17% 0.02 248 / 0.86);
+    --page-bg:
+      radial-gradient(circle at 8% 0%, oklch(36% 0.065 188 / 0.35), transparent 25rem),
+      radial-gradient(circle at 92% 8%, oklch(34% 0.075 28 / 0.18), transparent 24rem),
+      linear-gradient(180deg, oklch(17% 0.02 248), oklch(var(--color-hdb-bg)) 28rem);
+    --soft-shadow: 0 1px 2px oklch(0% 0 0 / 0.32);
   }
 
   html {
-    font-size: 16px;
+    font-size: 16.5px;
   }
 
   body {
     @apply bg-hdb-bg font-sans text-heritage-navy antialiased;
+    font-family:
+      "Segoe UI Variable",
+      "Segoe UI",
+      Inter,
+      ui-sans-serif,
+      system-ui,
+      sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "tnum";
     overflow-x: hidden;
+    background: var(--page-bg);
   }
 
   button,
@@ -28,12 +78,54 @@
 }
 
 @layer components {
+  .app-shell {
+    min-height: 100vh;
+    background: var(--page-bg);
+    transition: background-color 180ms ease-out, color 180ms ease-out;
+  }
+
+  .app-shell .bg-white {
+    background-color: var(--surface);
+  }
+
+  .app-shell .shadow-card {
+    box-shadow: var(--soft-shadow);
+  }
+
+  .app-nav {
+    background: var(--nav-bg);
+    backdrop-filter: blur(18px);
+  }
+
+  .brand-mark {
+    background: var(--surface);
+  }
+
+  .theme-toggle {
+    @apply inline-flex rounded-hdb p-1 ring-1 ring-heritage-navy/15;
+    background: var(--surface-soft);
+  }
+
+  .theme-toggle button {
+    @apply rounded-md px-2.5 py-1 text-xs font-semibold text-warm-stone transition-colors hover:text-heritage-navy;
+  }
+
+  .theme-toggle .theme-toggle-active {
+    @apply text-heritage-navy;
+    background: var(--surface);
+    box-shadow: var(--soft-shadow);
+  }
+
   .panel {
-    @apply min-w-0 rounded-hdb border border-heritage-navy/10 bg-white shadow-card;
+    @apply min-w-0 rounded-hdb border shadow-card;
+    background: var(--surface);
+    border-color: var(--line);
   }
 
   .metric-card {
-    @apply rounded-hdb border bg-white p-4;
+    @apply rounded-hdb border p-4;
+    background: var(--surface);
+    border-color: var(--line);
   }
 
   .bento-grid {
@@ -41,15 +133,17 @@
   }
 
   .field-label {
-    @apply text-sm font-medium text-heritage-navy;
+    @apply text-sm font-semibold text-heritage-navy;
   }
 
   .control {
-    @apply rounded-hdb border border-heritage-navy/15 bg-white px-3 py-2 text-sm text-heritage-navy shadow-none transition-colors hover:border-heritage-navy/25;
+    @apply rounded-hdb border px-3 py-2 text-sm font-medium text-heritage-navy shadow-none transition-colors hover:border-heritage-navy/25;
+    background: var(--surface);
+    border-color: var(--line-strong);
   }
 
   .interactive-slider {
-    @apply h-1.5 w-full appearance-none rounded-full bg-heritage-navy/15 outline-none;
+    @apply h-2 w-full appearance-none rounded-full bg-heritage-navy/15 outline-none;
   }
 
   .interactive-slider::-webkit-slider-thumb {
@@ -57,15 +151,75 @@
   }
 
   .btn-primary {
-    @apply rounded-hdb bg-heritage-navy px-4 py-2 text-sm font-medium text-hdb-bg transition-colors hover:bg-heritage-navy/90 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply rounded-hdb bg-heritage-navy px-4 py-2 text-sm font-semibold text-hdb-bg transition-colors hover:bg-heritage-navy/90 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .btn-secondary {
-    @apply rounded-hdb border border-heritage-navy/15 bg-white px-4 py-2 text-sm font-medium text-heritage-navy transition-colors hover:bg-heritage-navy/5 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply rounded-hdb border px-4 py-2 text-sm font-semibold text-heritage-navy transition-colors hover:bg-heritage-navy/5 disabled:cursor-not-allowed disabled:opacity-50;
+    background: var(--surface);
+    border-color: var(--line-strong);
   }
 
   .btn-accent {
     @apply rounded-hdb bg-futuristic-teal px-4 py-2 text-sm font-medium text-hdb-bg transition-colors hover:bg-electric-mint disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .source-credit-row {
+    @apply flex flex-wrap items-center gap-2 text-xs text-warm-stone md:justify-end;
+  }
+
+  .source-credit-row span {
+    @apply font-medium;
+  }
+
+  .source-credit-row a,
+  .project-source-credit a,
+  .overview-source-note a {
+    @apply font-medium text-futuristic-teal transition-colors hover:text-heritage-navy;
+  }
+
+  .source-credit-row a {
+    @apply rounded-full px-2.5 py-1 ring-1 ring-heritage-navy/10;
+    background: var(--surface);
+  }
+
+  .project-source-credit {
+    @apply border-t border-heritage-navy/10 pt-3 text-xs text-warm-stone;
+  }
+
+  .project-type-badge {
+    @apply inline-flex items-center rounded-sm px-1.5 py-0.5 text-[0.65rem] font-bold uppercase;
+    letter-spacing: 0;
+  }
+
+  .project-type-badge-default {
+    background: oklch(var(--color-heritage-navy) / 0.08);
+    color: oklch(var(--color-heritage-navy));
+  }
+
+  .project-type-badge-prime {
+    background: oklch(var(--color-electric-mint) / 0.16);
+    color: oklch(var(--color-electric-mint));
+  }
+
+  .project-type-badge-plus {
+    background: oklch(var(--color-futuristic-teal) / 0.16);
+    color: oklch(var(--color-futuristic-teal));
+  }
+
+  .project-type-badge-standard {
+    background: var(--good-soft);
+    color: var(--good);
+  }
+
+  .overview-source-note {
+    @apply rounded-hdb px-3 py-2 text-xs leading-5 text-warm-stone sm:col-span-2;
+    background: var(--surface-soft);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+
+  .overview-source-note a {
+    @apply ml-2 inline-flex;
   }
 
   .money-value {
@@ -74,6 +228,14 @@
 
   .bto-reveal {
     animation: bto-reveal 180ms ease-out;
+  }
+
+  .overview-page {
+    @apply min-h-[calc(100vh-8rem)] space-y-5;
+  }
+
+  .overview-grid {
+    @apply grid auto-rows-min gap-5;
   }
 
   .overview-page-head {
@@ -86,7 +248,15 @@
 
   .overview-hero {
     @apply grid gap-5 p-5 md:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.38fr)] lg:items-stretch;
-    background: oklch(99.2% 0.003 235);
+    background: var(--surface-raised);
+  }
+
+  .overview-hero-empty {
+    background: linear-gradient(135deg, var(--surface-raised), var(--surface-soft));
+  }
+
+  .overview-hero-ready {
+    background: var(--surface-raised);
   }
 
   .overview-status-chip {
@@ -94,13 +264,13 @@
   }
 
   .overview-status-ready {
-    color: oklch(34% 0.07 178);
-    background: oklch(93.5% 0.045 178);
+    color: var(--good);
+    background: var(--good-soft);
   }
 
   .overview-status-missing {
-    color: oklch(38% 0.095 25);
-    background: oklch(95% 0.032 25);
+    color: var(--cash);
+    background: oklch(var(--color-heritage-navy) / 0.07);
   }
 
   .overview-hero-actions {
@@ -120,42 +290,76 @@
   }
 
   .overview-price-meta span {
-    @apply rounded-full bg-white px-2.5 py-1 ring-1 ring-heritage-navy/10;
+    @apply rounded-full px-2.5 py-1 ring-1 ring-heritage-navy/10;
+    background: var(--surface);
+  }
+
+  .overview-waiting-stack {
+    @apply grid content-start gap-3 border-t border-heritage-navy/10 pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0;
+  }
+
+  .overview-waiting-list {
+    @apply flex flex-wrap gap-2 text-xs font-medium text-warm-stone;
+  }
+
+  .overview-waiting-list span {
+    @apply rounded-full px-2.5 py-1 ring-1 ring-heritage-navy/10;
+    background: var(--surface);
   }
 
   .overview-stat-panel {
-    @apply grid gap-0 p-5 md:grid-cols-3 md:p-6;
+    @apply grid gap-3 p-5 md:p-6;
+    grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
   }
 
-  .overview-stat {
-    @apply border-t border-heritage-navy/10 pt-4;
+  .overview-onboarding-panel {
+    @apply grid gap-5 p-5 md:p-6 lg:items-start;
   }
 
-  .overview-stat:first-child {
+  .overview-onboarding-grid {
+    @apply grid gap-0;
+  }
+
+  .overview-setup-step {
+    @apply border-t border-heritage-navy/10 py-4;
+  }
+
+  .overview-setup-step:first-child {
     @apply border-t-0 pt-0;
   }
 
+  .overview-setup-step:last-child {
+    @apply pb-0;
+  }
+
+  .overview-stat {
+    @apply min-w-0 rounded-hdb px-3 py-3;
+    background: var(--surface-raised);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+
+  .overview-stat:first-child {
+    @apply border-t-0;
+  }
+
   .overview-stat-value {
-    @apply mt-1 whitespace-nowrap text-xl font-semibold tabular-nums text-heritage-navy;
+    @apply mt-1 whitespace-nowrap text-lg font-semibold tabular-nums text-heritage-navy;
   }
 
   .overview-stat-value-grant {
-    color: oklch(37% 0.08 178);
-  }
-
-  .overview-main-grid {
-    @apply grid gap-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(340px,0.65fr)];
+    color: var(--good);
   }
 
   .overview-progress-panel,
   .overview-context-panel,
-  .overview-policy-panel {
+  .overview-policy-panel,
+  .overview-action-panel {
     @apply p-5 md:p-6;
   }
 
   .overview-progress-count {
     @apply shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums text-heritage-navy ring-1 ring-heritage-navy/10;
-    background: oklch(96.8% 0.016 205 / 0.72);
+    background: var(--surface-soft);
   }
 
   .overview-progress-track {
@@ -167,12 +371,16 @@
     background: oklch(55% 0.085 178);
   }
 
-  .overview-progress-notes {
-    @apply mt-4 flex flex-wrap gap-2 text-xs font-medium text-warm-stone;
+  .overview-progress-note {
+    @apply mt-4 rounded-hdb px-3 py-2 text-sm leading-5 text-warm-stone;
+    background: var(--surface-soft);
+    box-shadow: inset 0 0 0 1px var(--line);
   }
 
-  .overview-progress-notes span {
-    @apply rounded-full bg-white px-2.5 py-1 ring-1 ring-heritage-navy/10;
+  .overview-progress-note::before {
+    @apply mr-2 inline-block h-2 w-2 rounded-full align-middle;
+    content: "";
+    background: oklch(55% 0.085 178);
   }
 
   .overview-fact-grid {
@@ -191,24 +399,102 @@
     @apply grid gap-4 sm:grid-cols-2;
   }
 
+  .overview-action-panel {
+    background: var(--surface-raised);
+  }
+
   @media (min-width: 768px) {
     .overview-stat {
-      @apply border-l border-t-0 pl-5 pt-0;
+      @apply border-t-0;
     }
 
     .overview-stat:first-child {
-      @apply border-l-0 pl-0;
+      @apply border-l-0;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .overview-grid {
+      grid-template-columns: minmax(0, 1.18fr) minmax(320px, 0.82fr);
+      grid-template-areas:
+        "hero setup"
+        "progress context"
+        "policy action";
+    }
+
+    .overview-page-ready .overview-grid {
+      grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.72fr);
+      grid-template-areas:
+        "hero stats"
+        "progress context"
+        "policy policy";
+    }
+
+    .overview-hero {
+      grid-area: hero;
+      min-height: 18rem;
+    }
+
+    .overview-stat-panel,
+    .overview-onboarding-panel {
+      grid-area: setup;
+    }
+
+    .overview-page-ready .overview-stat-panel {
+      grid-area: stats;
+    }
+
+    .overview-progress-panel {
+      grid-area: progress;
+    }
+
+    .overview-context-panel {
+      grid-area: context;
+    }
+
+    .overview-policy-panel {
+      grid-area: policy;
+    }
+
+    .overview-action-panel {
+      grid-area: action;
+    }
+  }
+
+  @media (min-width: 1440px) {
+    .overview-grid {
+      grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.54fr) minmax(300px, 0.54fr);
+      grid-template-areas:
+        "hero setup context"
+        "progress policy action";
+      align-items: stretch;
+    }
+
+    .overview-page-ready .overview-grid {
+      grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.55fr) minmax(320px, 0.55fr);
+      grid-template-areas:
+        "hero stats context"
+        "progress policy policy";
+    }
+
+    .overview-hero,
+    .overview-onboarding-panel,
+    .overview-progress-panel,
+    .overview-context-panel,
+    .overview-policy-panel,
+    .overview-action-panel {
+      min-height: 15.5rem;
     }
   }
 
   .scenario-ledger {
     @apply overflow-hidden;
-    background: white;
+    background: var(--surface);
   }
 
   .scenario-ledger-head {
     @apply flex min-w-0 flex-col gap-4 border-b border-heritage-navy/10 px-5 py-5 md:flex-row md:items-start md:justify-between md:px-6;
-    background: white;
+    background: var(--surface);
   }
 
   .scenario-eyebrow,
@@ -229,22 +515,22 @@
   .scenario-assumptions-section,
   .scenario-money-section {
     @apply min-w-0 rounded-hdb border border-heritage-navy/10 p-4;
-    box-shadow: inset 0 0 0 1px oklch(var(--color-heritage-navy) / 0.08);
+    box-shadow: inset 0 0 0 1px var(--line);
   }
 
   .scenario-price-section {
     @apply grid gap-5;
-    background: oklch(99% 0.003 235);
+    background: var(--surface-raised);
   }
 
   .scenario-assumptions-section {
     @apply grid content-start gap-4;
-    background: white;
+    background: var(--surface);
   }
 
   .scenario-money-section {
     @apply grid content-start gap-4;
-    background: oklch(98.7% 0.01 205);
+    background: var(--surface-soft);
   }
 
   .scenario-price {
@@ -258,8 +544,8 @@
 
   .scenario-fact {
     @apply rounded-hdb px-3 py-2 text-xs;
-    background: oklch(100% 0 0 / 0.64);
-    box-shadow: inset 0 0 0 1px oklch(var(--color-heritage-navy) / 0.07);
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--line);
   }
 
   .scenario-fact span {
@@ -272,17 +558,46 @@
 
   .scenario-note {
     @apply rounded-hdb px-3 py-2 text-xs leading-5 text-warm-stone;
-    background: oklch(96.8% 0.016 205 / 0.72);
-    box-shadow: inset 0 0 0 1px oklch(78% 0.035 205 / 0.55);
+    background: var(--surface-soft);
+    box-shadow: inset 0 0 0 1px var(--line);
   }
 
   .scenario-control-grid {
     @apply grid gap-4;
   }
 
+  .scenario-income-control {
+    @apply min-w-0;
+  }
+
+  .scenario-choice-grid,
+  .scenario-loan-controls {
+    @apply grid gap-4;
+  }
+
+  .scenario-segmented-field {
+    @apply grid gap-2;
+  }
+
+  .scenario-segmented-control {
+    @apply flex min-w-0 flex-wrap gap-1 rounded-hdb p-1;
+    background: var(--surface-soft);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+
+  .scenario-segmented-control button {
+    @apply min-h-8 flex-1 rounded-md px-2.5 py-1.5 text-xs font-semibold text-warm-stone transition-colors hover:text-heritage-navy;
+  }
+
+  .scenario-segmented-control .scenario-segment-active {
+    @apply text-heritage-navy;
+    background: var(--surface);
+    box-shadow: var(--soft-shadow);
+  }
+
   .scenario-snapshot-total {
     @apply whitespace-nowrap text-xl font-semibold tabular-nums;
-    color: oklch(42% 0.11 25);
+    color: var(--money);
   }
 
   .scenario-money-head {
@@ -300,8 +615,58 @@
 
   .scenario-loan-meter {
     @apply grid gap-2 rounded-hdb p-3;
-    background: oklch(100% 0 0 / 0.64);
-    box-shadow: inset 0 0 0 1px oklch(var(--color-heritage-navy) / 0.08);
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+
+  .scenario-loan-needed-card {
+    @apply grid gap-3 rounded-hdb p-3;
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+  }
+
+  .scenario-loan-needed-card > div:first-child,
+  .scenario-repayment-card {
+    @apply grid gap-1;
+  }
+
+  .scenario-loan-needed-card span,
+  .scenario-repayment-card span {
+    @apply text-xs font-medium text-warm-stone;
+  }
+
+  .scenario-loan-needed-card strong,
+  .scenario-repayment-card strong {
+    @apply whitespace-nowrap text-2xl font-semibold tabular-nums text-heritage-navy;
+  }
+
+  .scenario-loan-needed-card em,
+  .scenario-repayment-card em {
+    @apply text-xs not-italic leading-5 text-warm-stone;
+  }
+
+  .scenario-repayment-card {
+    @apply rounded-hdb px-3 py-2.5;
+    background: var(--surface-soft);
+  }
+
+  .scenario-price-bridge {
+    @apply grid gap-1 rounded-hdb px-3 py-2.5 text-xs leading-5;
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+
+  .scenario-price-bridge span,
+  .scenario-price-bridge em {
+    @apply text-warm-stone;
+  }
+
+  .scenario-price-bridge strong {
+    @apply whitespace-nowrap text-base font-semibold tabular-nums text-heritage-navy;
+  }
+
+  .scenario-price-bridge em {
+    @apply not-italic;
   }
 
   .scenario-meter-track {
@@ -310,7 +675,7 @@
 
   .scenario-meter-fill {
     @apply block h-full rounded-full;
-    background: oklch(55% 0.085 178);
+    background: var(--good);
   }
 
   .scenario-ledger-rows {
@@ -328,25 +693,47 @@
 
   .scenario-fee-row {
     @apply flex flex-col gap-1 rounded-hdb px-3 py-2 text-xs leading-5 text-warm-stone sm:flex-row sm:items-center sm:justify-between;
-    background: oklch(100% 0 0 / 0.5);
+    background: var(--surface);
   }
 
   .scenario-fee-row span:last-child {
     @apply font-semibold text-heritage-navy;
   }
 
+  .loan-rate-field {
+    @apply grid gap-3;
+  }
+
+  .loan-rate-control {
+    @apply grid items-center rounded-hdb border border-heritage-navy/15 text-sm text-heritage-navy transition-colors;
+    background: var(--surface);
+    grid-template-columns: minmax(0, 1fr) max-content;
+  }
+
+  .loan-rate-control:focus-within {
+    @apply outline outline-2 outline-offset-2 outline-futuristic-teal;
+  }
+
+  .loan-rate-control input {
+    @apply min-w-0 bg-transparent px-3 py-2 text-right tabular-nums outline-none;
+  }
+
+  .loan-rate-control span {
+    @apply border-l border-heritage-navy/10 px-3 text-xs font-medium text-warm-stone;
+  }
+
   .scenario-save-strip {
     @apply flex min-w-0 flex-col gap-4 border-t border-heritage-navy/10 px-5 py-4 md:flex-row md:items-center md:justify-between md:px-6;
-    background: oklch(99% 0.003 235);
+    background: var(--surface-raised);
   }
 
   @media (min-width: 768px) {
-    .scenario-control-grid {
-      @apply grid-cols-2;
+    .scenario-choice-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
-    .scenario-control-grid > :first-child {
-      @apply col-span-2;
+    .scenario-loan-controls {
+      grid-template-columns: minmax(0, 1.2fr) minmax(14rem, 0.8fr);
     }
   }
 
@@ -358,7 +745,8 @@
   }
 
   .timeline-board-panel {
-    @apply overflow-hidden bg-white;
+    @apply overflow-hidden;
+    background: var(--surface);
   }
 
   .timeline-board-head {
@@ -367,7 +755,7 @@
 
   .timeline-board-summary {
     @apply grid gap-1 rounded-hdb px-3 py-2 text-right ring-1 ring-heritage-navy/10;
-    background: oklch(99% 0.003 235);
+    background: var(--surface-raised);
   }
 
   .timeline-board-summary span {
@@ -376,18 +764,62 @@
 
   .timeline-board-summary strong {
     @apply whitespace-nowrap text-lg font-semibold tabular-nums;
-    color: oklch(42% 0.11 25);
+    color: var(--money);
   }
 
   .timeline-board-summary em {
     @apply text-xs not-italic text-warm-stone;
   }
 
+  .timeline-board-body {
+    @apply grid gap-4 px-4 py-4 md:px-6 md:py-5;
+    background: var(--surface-raised);
+  }
+
+  .timeline-month-strip {
+    @apply grid gap-2;
+    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  }
+
+  .timeline-month-chip {
+    @apply grid gap-1 rounded-hdb px-3 py-2.5;
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+
+  .timeline-month-chip span {
+    @apply text-xs font-semibold text-heritage-navy;
+  }
+
+  .timeline-month-chip strong {
+    @apply whitespace-nowrap text-sm font-semibold tabular-nums;
+    color: var(--money);
+  }
+
+  .timeline-month-chip em {
+    @apply text-xs not-italic text-warm-stone;
+  }
+
+  .timeline-month-chip-complete {
+    background: var(--good-soft);
+  }
+
+  .timeline-month-chip-complete strong {
+    color: var(--good);
+  }
+
+  .timeline-card-grid {
+    @apply grid list-none gap-3;
+    grid-template-columns: repeat(auto-fit, minmax(21rem, 1fr));
+  }
+
   .timeline-flow {
     @apply px-4 py-5 md:px-6 md:py-6;
-    background:
-      linear-gradient(90deg, oklch(97.8% 0.004 235), white 42%),
-      oklch(98.5% 0.004 235);
+    background: linear-gradient(90deg, var(--surface-raised), var(--surface) 42%);
+  }
+
+  .timeline-flow-layout {
+    @apply grid min-w-0 gap-5;
   }
 
   .timeline-flow-list {
@@ -409,7 +841,7 @@
 
   .timeline-flow-date strong {
     @apply mt-1 block whitespace-nowrap text-xs font-semibold tabular-nums;
-    color: oklch(42% 0.11 25);
+    color: var(--money);
   }
 
   .timeline-flow-node-wrap {
@@ -431,13 +863,14 @@
   }
 
   .timeline-flow-node {
-    @apply relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 bg-white text-xs font-bold tabular-nums text-heritage-navy shadow-card;
+    @apply relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-bold tabular-nums text-heritage-navy shadow-card;
+    background: var(--surface);
     border-color: oklch(var(--color-futuristic-teal) / 0.75);
   }
 
   .timeline-flow-group-complete .timeline-flow-node {
-    color: oklch(34% 0.07 178);
-    background: oklch(93.5% 0.045 178);
+    color: var(--good);
+    background: var(--good-soft);
   }
 
   .timeline-flow-content {
@@ -449,7 +882,8 @@
   }
 
   .timeline-flow-group-head {
-    @apply mb-3 flex flex-col gap-2 rounded-hdb border border-heritage-navy/10 bg-white px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between;
+    @apply mb-3 flex flex-col gap-2 rounded-hdb border border-heritage-navy/10 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between;
+    background: var(--surface);
   }
 
   .timeline-flow-group-head h4 {
@@ -466,7 +900,8 @@
   }
 
   .timeline-flow-card {
-    @apply grid min-w-0 gap-4 rounded-hdb border border-heritage-navy/10 bg-white p-4 transition-transform duration-200 md:grid-cols-[minmax(0,1fr)_minmax(210px,0.38fr)];
+    @apply grid min-w-0 gap-4 rounded-hdb border border-heritage-navy/10 p-4 transition-[background-color,transform] duration-200 sm:grid-cols-[minmax(0,1fr)_minmax(9.25rem,auto)];
+    background: var(--surface);
   }
 
   .timeline-flow-card:hover {
@@ -474,11 +909,11 @@
   }
 
   .timeline-flow-card-payment {
-    background: oklch(99% 0.004 235);
+    background: var(--surface-raised);
   }
 
   .timeline-flow-card-complete {
-    background: oklch(98.8% 0.003 235);
+    background: var(--surface-soft);
   }
 
   .timeline-flow-card-complete h5,
@@ -486,7 +921,7 @@
     @apply text-heritage-navy/60;
   }
 
-  .timeline-flow-card-complete .timeline-board-payment,
+  .timeline-flow-card-complete .payment-requirement,
   .timeline-flow-card-complete .timeline-board-empty {
     opacity: 0.74;
   }
@@ -497,11 +932,15 @@
 
   .timeline-flow-step {
     @apply mt-0.5 shrink-0 rounded-full px-2 py-1 text-xs font-bold tabular-nums text-heritage-navy;
-    background: oklch(95.5% 0.02 246);
+    background: var(--surface-soft);
   }
 
   .timeline-flow-card h5 {
     @apply text-sm font-semibold text-heritage-navy;
+  }
+
+  .timeline-flow-card-top > div > span {
+    @apply mt-0.5 block text-xs font-medium text-warm-stone;
   }
 
   .timeline-flow-card-main p {
@@ -509,46 +948,56 @@
   }
 
   .timeline-flow-card-side {
-    @apply grid min-w-0 content-start gap-2;
-  }
-
-  .timeline-flow-total {
-    @apply whitespace-nowrap text-right text-sm font-bold tabular-nums;
-    color: oklch(42% 0.11 25);
+    @apply grid min-w-0 content-start gap-2 md:justify-items-end;
   }
 
   .timeline-complete-toggle {
-    @apply mt-3 inline-flex items-center gap-2 rounded-hdb px-2.5 py-1.5 text-xs font-semibold text-warm-stone ring-1 ring-heritage-navy/10 transition-colors hover:bg-heritage-navy/5;
+    @apply inline-flex w-full items-center justify-center gap-2 rounded-hdb px-2.5 py-1.5 text-xs font-semibold text-warm-stone ring-1 ring-heritage-navy/10 transition-colors hover:bg-heritage-navy/5 md:w-auto md:min-w-32;
+  }
+
+  .milestone-date-field {
+    @apply grid w-full gap-1.5 rounded-hdb px-2.5 py-2 text-left ring-1 ring-heritage-navy/10 md:w-40;
+    background: var(--surface);
+  }
+
+  .milestone-date-field span {
+    @apply text-xs font-medium text-warm-stone;
+  }
+
+  .milestone-date-field input {
+    @apply min-w-0 rounded-md border border-heritage-navy/15 px-2 py-1.5 text-xs font-semibold text-heritage-navy transition-colors hover:border-heritage-navy/25;
+    background: var(--surface-raised);
+  }
+
+  .milestone-date-field em {
+    @apply text-[0.68rem] not-italic leading-4 text-warm-stone;
   }
 
   .timeline-complete-box {
-    @apply h-3.5 w-3.5 rounded-sm border border-heritage-navy/25 bg-white;
+    @apply h-3.5 w-3.5 rounded-sm border border-heritage-navy/25;
+    background: var(--surface);
   }
 
   .timeline-complete-toggle-on {
-    color: oklch(34% 0.07 178);
-    background: oklch(93.5% 0.045 178);
+    color: var(--good);
+    background: var(--good-soft);
   }
 
   .timeline-complete-toggle-on .timeline-complete-box {
     border-color: oklch(48% 0.08 184);
     background: oklch(48% 0.08 184);
-    box-shadow: inset 0 0 0 3px oklch(93.5% 0.045 178);
+    box-shadow: inset 0 0 0 3px var(--good-soft);
   }
 
   .timeline-board-payment {
-    @apply rounded-hdb p-2.5;
-    background: white;
-    box-shadow: inset 0 0 0 1px oklch(var(--color-heritage-navy) / 0.08);
-  }
-
-  .timeline-board-split {
-    @apply mt-2 grid gap-2 text-xs sm:grid-cols-2;
+    @apply mt-3 rounded-hdb p-2.5;
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--line);
   }
 
   .timeline-board-empty {
-    @apply rounded-hdb border border-dashed px-3 py-2 text-xs font-medium text-warm-stone;
-    background: oklch(99% 0.003 235);
+    @apply rounded-hdb border border-dashed px-3 py-2 text-xs font-medium text-warm-stone md:text-right;
+    background: var(--surface-raised);
   }
 
   .payment-mix-bar {
@@ -574,23 +1023,21 @@
     @apply h-full w-full bg-heritage-navy/10;
   }
 
-  .payment-source {
-    @apply rounded-hdb px-2.5 py-2;
-    box-shadow: inset 0 0 0 1px oklch(var(--color-heritage-navy) / 0.08);
+  .payment-requirement {
+    @apply mt-2 grid gap-1.5 text-xs;
   }
 
-  .payment-source-value {
-    @apply whitespace-nowrap font-semibold tabular-nums;
+  .payment-line {
+    @apply grid items-baseline gap-3;
+    grid-template-columns: minmax(0, 1fr) max-content;
   }
 
-  .payment-source-cpf {
-    color: oklch(31% 0.07 178);
-    background: oklch(93.5% 0.045 178);
+  .payment-line span {
+    @apply min-w-0 text-warm-stone;
   }
 
-  .payment-source-cash {
-    color: oklch(38% 0.095 25);
-    background: oklch(95% 0.032 25);
+  .payment-line strong {
+    @apply whitespace-nowrap text-right font-semibold tabular-nums text-heritage-navy;
   }
 
   .timeline-footnote {
@@ -608,6 +1055,14 @@
 
     .timeline-flow {
       @apply px-3;
+    }
+
+    .timeline-flow-layout {
+      @apply gap-4;
+    }
+
+    .timeline-card-grid {
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .timeline-flow-group {
@@ -638,6 +1093,10 @@
 
     .timeline-flow-card {
       @apply p-3;
+    }
+
+    .timeline-flow-card-side {
+      @apply gap-2;
     }
 
     .timeline-flow-card-top {
@@ -672,7 +1131,8 @@
   .bto-reveal,
   .timeline-flow-card,
   .timeline-complete-toggle,
-  .payment-mix-segment {
+  .payment-mix-segment,
+  .milestone-date-field input {
     animation: none;
     transition: none;
   }

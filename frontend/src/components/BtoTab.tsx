@@ -5,6 +5,11 @@ import { FactItem } from "./FactItem";
 import type { FlatType } from "../types";
 import { getLaunchMonthSortValue } from "../utils/date";
 import { currency } from "../utils/format";
+import {
+  BTO_SOURCE_CREDITS,
+  getBtoProjectSourceLabel,
+  getBtoProjectSourceNote,
+} from "../utils/sourceCredits";
 
 type BtoTabProps = {
   btoProjects: BtoProject[];
@@ -70,18 +75,10 @@ export function BtoTab({
         <div>
           <h2 className="text-2xl font-semibold text-heritage-navy">BTO Radar</h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-warm-stone">
-            Start with a launch month, drill into its projects, then send one
-            project into your payment plan.
+            Browse launches, compare project facts, send one into Plan.
           </p>
         </div>
-        <a
-          href="https://recordbto.com/bto"
-          target="_blank"
-          rel="noreferrer"
-          className="text-sm font-medium text-futuristic-teal hover:text-heritage-navy"
-        >
-          Source: RecordBTO
-        </a>
+        <SourceCreditLinks />
       </header>
 
       {btoLoading && (
@@ -192,7 +189,7 @@ export function BtoTab({
                     Launch months
                   </h3>
                   <p className="mt-1 text-sm text-warm-stone">
-                    Choose a launch to see its projects.
+                    Pick a launch.
                   </p>
                 </div>
                 <div className="divide-y divide-heritage-navy/10">
@@ -299,8 +296,7 @@ function ProjectDrilldown({
             {launch.key}
           </h3>
           <p className="mt-1 text-sm text-warm-stone">
-            Pick a project to prefill flat type, price, launch month, and TOP in
-            your Plan page.
+            Send a project to Plan to anchor price, launch month, and TOP.
           </p>
         </div>
         <div className="text-sm text-warm-stone">
@@ -399,8 +395,32 @@ function ProjectCard({
 
       <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-warm-stone">
         <span>Wait: {project.waitTimeMonths ?? "Not listed"}</span>
+        <span>{getBtoProjectSourceNote(project)}</span>
+      </div>
+
+      <div className="project-source-credit">
+        {project.sourceUrl ? (
+          <a href={project.sourceUrl} target="_blank" rel="noreferrer">
+            Source: {getBtoProjectSourceLabel(project)}
+          </a>
+        ) : (
+          <span>Source: {getBtoProjectSourceLabel(project)}</span>
+        )}
       </div>
     </article>
+  );
+}
+
+function SourceCreditLinks() {
+  return (
+    <div className="source-credit-row" aria-label="BTO data credits">
+      <span>Data credits</span>
+      {BTO_SOURCE_CREDITS.map((source) => (
+        <a key={source.url} href={source.url} target="_blank" rel="noreferrer">
+          {source.label}
+        </a>
+      ))}
+    </div>
   );
 }
 
@@ -484,13 +504,13 @@ function ProjectTypeBadge({ type }: { type: string | undefined }) {
   if (!type) return null;
   const lower = type.toLowerCase();
   
-  let layout = "bg-heritage-navy/5 text-heritage-navy";
-  if (lower === "prime") layout = "bg-amber-100 text-amber-800";
-  else if (lower === "plus") layout = "bg-blue-100 text-blue-800";
-  else if (lower === "standard") layout = "bg-emerald-100 text-emerald-800";
+  let layout = "project-type-badge-default";
+  if (lower === "prime") layout = "project-type-badge-prime";
+  else if (lower === "plus") layout = "project-type-badge-plus";
+  else if (lower === "standard") layout = "project-type-badge-standard";
   
   return (
-    <span className={`inline-flex items-center rounded-sm px-1.5 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider ${layout}`}>
+    <span className={`project-type-badge ${layout}`}>
       {formatProjectType(type)}
     </span>
   );
