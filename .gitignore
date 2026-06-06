@@ -6,6 +6,10 @@
 .DS_Store
 Thumbs.db
 
+# Local agent/tooling bundles
+.agents/
+.claude/
+
 # Node artifacts
 node_modules/
 dist/
