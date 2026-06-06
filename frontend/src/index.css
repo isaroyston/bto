@@ -776,9 +776,13 @@
     background: var(--surface-raised);
   }
 
-  .timeline-month-strip {
+  .timeline-month-grid {
     @apply grid gap-2;
-    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+  }
+
+  .timeline-month-column {
+    @apply grid content-start gap-3;
   }
 
   .timeline-month-chip {
@@ -808,9 +812,8 @@
     color: var(--good);
   }
 
-  .timeline-card-grid {
+  .timeline-month-cards {
     @apply grid list-none gap-3;
-    grid-template-columns: repeat(auto-fit, minmax(21rem, 1fr));
   }
 
   .timeline-flow {
@@ -1061,7 +1064,7 @@
       @apply gap-4;
     }
 
-    .timeline-card-grid {
+    .timeline-month-grid {
       grid-template-columns: minmax(0, 1fr);
     }
 

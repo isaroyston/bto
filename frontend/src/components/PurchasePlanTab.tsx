@@ -733,7 +733,7 @@ function TimelineBoard({
       </div>
 
       <div className="timeline-board-body">
-        <div className="timeline-month-strip" aria-label="Milestone month summary">
+        <div className="timeline-month-grid" aria-label="Payment milestones by month">
           {groups.map((group) => {
             const completedInGroup = group.items.filter((item) =>
               completedMilestones.includes(item.label)
@@ -754,38 +754,42 @@ function TimelineBoard({
             return (
               <div
                 key={group.date}
-                className={`timeline-month-chip ${
-                  groupComplete ? "timeline-month-chip-complete" : ""
-                }`}
+                className="timeline-month-column"
               >
-                <span>{group.date}</span>
-                <strong>
-                  {groupRemainingPayment > 0
-                    ? currency(groupRemainingPayment)
-                    : group.totalPayment > 0
-                      ? "Cleared"
-                      : "No payment"}
-                </strong>
-                <em>
-                  {completedInGroup}/{group.items.length} done
-                </em>
+                <div
+                  className={`timeline-month-chip ${
+                    groupComplete ? "timeline-month-chip-complete" : ""
+                  }`}
+                >
+                  <span>{group.date}</span>
+                  <strong>
+                    {groupRemainingPayment > 0
+                      ? currency(groupRemainingPayment)
+                      : group.totalPayment > 0
+                        ? "Cleared"
+                        : "No payment"}
+                  </strong>
+                  <em>
+                    {completedInGroup}/{group.items.length} done
+                  </em>
+                </div>
+
+                <ol className="timeline-month-cards">
+                  {group.items.map((item, itemIndex) => (
+                    <TimelineBoardCard
+                      key={item.label}
+                      item={item}
+                      stepIndex={group.firstIndex + itemIndex}
+                      isComplete={completedMilestones.includes(item.label)}
+                      onToggleComplete={onToggleMilestoneComplete}
+                      onDateChange={onMilestoneDateChange}
+                    />
+                  ))}
+                </ol>
               </div>
             );
           })}
         </div>
-
-        <ol className="timeline-card-grid" aria-label="Payment milestones">
-          {displayTimeline.map((item, index) => (
-            <TimelineBoardCard
-              key={item.label}
-              item={item}
-              stepIndex={index}
-              isComplete={completedMilestones.includes(item.label)}
-              onToggleComplete={onToggleMilestoneComplete}
-              onDateChange={onMilestoneDateChange}
-            />
-          ))}
-        </ol>
       </div>
 
       <p className="timeline-footnote">
