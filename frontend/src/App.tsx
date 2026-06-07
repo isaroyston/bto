@@ -404,6 +404,13 @@ function App() {
             townQuery={townQuery}
             filteredProjects={filteredProjects}
             selectedFlatType={flatType}
+            combinedIncome={combinedIncome}
+            loanAmount={loanAmount}
+            ehgGrant={ehgGrant}
+            financing={financing}
+            scheme={scheme}
+            loanTenureYears={loanTenureYears}
+            loanInterestRate={loanInterestRate}
             onRetry={handleRetryBto}
             onYearFilterChange={handleYearFilterChange}
             onTownQueryChange={handleTownQueryChange}

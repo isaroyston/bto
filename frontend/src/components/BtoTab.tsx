@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 import { FLAT_TYPE_OPTIONS } from "../constants";
 import type { BtoFlatVariant, BtoProject } from "../policies/policyConfig";
 import { FactItem } from "./FactItem";
-import type { FlatType } from "../types";
+import type { FinancingType, FlatType, SchemeType } from "../types";
+import type { BtoRecommendation } from "../utils/btoRecommendation";
+import { rankBtoProjects } from "../utils/btoRecommendation";
 import { getLaunchMonthSortValue } from "../utils/date";
 import { currency } from "../utils/format";
 import {
@@ -21,6 +23,13 @@ type BtoTabProps = {
   filteredProjects: BtoProject[];
   selectedFlatType: FlatType;
   selectedProjectId: string | null;
+  combinedIncome: number;
+  loanAmount: number;
+  ehgGrant: number;
+  financing: FinancingType;
+  scheme: SchemeType;
+  loanTenureYears: number;
+  loanInterestRate: number;
   onRetry: () => void;
   onYearFilterChange: (value: string) => void;
   onTownQueryChange: (value: string) => void;
@@ -46,6 +55,13 @@ export function BtoTab({
   filteredProjects,
   selectedFlatType,
   selectedProjectId,
+  combinedIncome,
+  loanAmount,
+  ehgGrant,
+  financing,
+  scheme,
+  loanTenureYears,
+  loanInterestRate,
   onRetry,
   onYearFilterChange,
   onTownQueryChange,
@@ -68,6 +84,31 @@ export function BtoTab({
   );
   const selectedLaunch =
     launchGroups.find((group) => group.key === activeLaunch) ?? launchGroups[0];
+  const recommendations = useMemo(
+    () =>
+      rankBtoProjects({
+        projects: filteredProjects,
+        flatType: selectedFlatType,
+        combinedIncome,
+        loanAmount,
+        ehgGrant,
+        financing,
+        scheme,
+        loanTenureYears,
+        loanInterestRate,
+      }),
+    [
+      combinedIncome,
+      ehgGrant,
+      filteredProjects,
+      financing,
+      loanAmount,
+      loanInterestRate,
+      loanTenureYears,
+      scheme,
+      selectedFlatType,
+    ]
+  );
 
   return (
     <section className="space-y-5">
@@ -177,6 +218,14 @@ export function BtoTab({
             />
           </div>
 
+          {recommendations.length > 0 && (
+            <RecommendationPanel
+              recommendations={recommendations}
+              selectedProjectId={selectedProjectId}
+              onSelectProject={onSelectProject}
+            />
+          )}
+
           {launchGroups.length === 0 ? (
             <div className="panel p-5 text-sm text-warm-stone">
               No projects match the current filters.
@@ -218,6 +267,108 @@ export function BtoTab({
         </>
       )}
     </section>
+  );
+}
+
+function RecommendationPanel({
+  recommendations,
+  selectedProjectId,
+  onSelectProject,
+}: {
+  recommendations: BtoRecommendation[];
+  selectedProjectId: string | null;
+  onSelectProject: (projectId: string) => void;
+}) {
+  return (
+    <section className="panel p-4">
+      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h3 className="text-base font-semibold text-heritage-navy">
+            Best matches for current assumptions
+          </h3>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-warm-stone">
+            Phase 1 baseline: ranks projects by loan fit, monthly load, cash risk,
+            data confidence, and TOP timing.
+          </p>
+        </div>
+        <span className="rounded-full px-2.5 py-1 text-xs font-semibold text-heritage-navy ring-1 ring-heritage-navy/10">
+          Explainable score
+        </span>
+      </div>
+
+      <div className="mt-4 grid gap-3 xl:grid-cols-3">
+        {recommendations.map((recommendation) => (
+          <RecommendationCard
+            key={recommendation.project.id}
+            recommendation={recommendation}
+            isSelected={recommendation.project.id === selectedProjectId}
+            onSelectProject={onSelectProject}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function RecommendationCard({
+  recommendation,
+  isSelected,
+  onSelectProject,
+}: {
+  recommendation: BtoRecommendation;
+  isSelected: boolean;
+  onSelectProject: (projectId: string) => void;
+}) {
+  const { project, variant } = recommendation;
+
+  return (
+    <article className="grid gap-4 rounded-hdb border border-heritage-navy/10 bg-white p-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h4 className="font-semibold text-heritage-navy">{project.name}</h4>
+            <ProjectTypeBadge type={project.btoType} />
+          </div>
+          <p className="mt-1 text-sm text-warm-stone">{project.location}</p>
+        </div>
+        <div className="shrink-0 rounded-hdb px-2.5 py-1 text-right ring-1 ring-heritage-navy/10">
+          <span className="block text-[0.68rem] font-semibold text-warm-stone">
+            Score
+          </span>
+          <strong className="text-lg tabular-nums text-heritage-navy">
+            {recommendation.score}
+          </strong>
+        </div>
+      </div>
+
+      <div className="grid gap-2 text-sm sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+        <FactItem label={`${variant.type} price`} value={currency(variant.basePrice)} />
+        <FactItem
+          label="Monthly estimate"
+          value={currency(recommendation.monthlyPayment)}
+        />
+      </div>
+
+      <div className="grid gap-2">
+        {recommendation.reasons.map((reason) => (
+          <div
+            key={`${project.id}-${reason.label}`}
+            className={`recommendation-reason recommendation-reason-${reason.tone}`}
+          >
+            <span>{reason.label}</span>
+            <strong>{reason.value}</strong>
+          </div>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        className={isSelected ? "btn-primary" : "btn-secondary"}
+        onClick={() => onSelectProject(project.id)}
+      >
+        {isSelected ? "Selected in Plan" : "Use in Plan"}
+      </button>
+    </article>
   );
 }
 
