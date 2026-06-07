@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-03T07:35:34.145Z",
+  "generatedAt": "2026-06-07T10:59:20.908Z",
   "source": "https://recordbto.com/bto",
   "projectCount": 142,
   "projects": [
@@ -69,6 +69,8 @@
       "expectedTop": "Jun 2031",
       "totalUnits": 600,
       "nearestMrt": "Ang Mo Kio MRT",
+      "nearestMrtDistanceMeters": 500,
+      "nearestMrtDistanceSource": "RecordBTO listing MRT distance",
       "sourceUrl": "https://recordbto.com/bto/ang-mo-kio-bto-name-tbc"
     },
     {
@@ -137,6 +139,8 @@
       "expectedTop": "Mar 2031",
       "totalUnits": 1200,
       "nearestMrt": "Punggol MRT",
+      "nearestMrtDistanceMeters": 500,
+      "nearestMrtDistanceSource": "RecordBTO listing MRT distance",
       "sourceUrl": "https://recordbto.com/bto/punggol-bto-name-tbc"
     },
     {
@@ -181,6 +185,8 @@
       "expectedTop": "Jun 2031",
       "totalUnits": 1600,
       "nearestMrt": "Caldecott MRT",
+      "nearestMrtDistanceMeters": 100,
+      "nearestMrtDistanceSource": "RecordBTO listing MRT distance",
       "sourceUrl": "https://recordbto.com/bto/toa-payoh-west-at-caldecott"
     },
     {
@@ -249,6 +255,8 @@
       "expectedTop": "Mar 2031",
       "totalUnits": 600,
       "nearestMrt": "Woodlands MRT",
+      "nearestMrtDistanceMeters": 500,
+      "nearestMrtDistanceSource": "RecordBTO listing MRT distance",
       "sourceUrl": "https://recordbto.com/bto/woodlands-bto-name-tbc"
     },
     {
@@ -317,6 +325,8 @@
       "expectedTop": "Dec 2030",
       "totalUnits": 800,
       "nearestMrt": "Yishun MRT",
+      "nearestMrtDistanceMeters": 500,
+      "nearestMrtDistanceSource": "RecordBTO listing MRT distance",
       "sourceUrl": "https://recordbto.com/bto/yishun-bto-name-tbc"
     },
     {
@@ -385,6 +395,8 @@
       "expectedTop": "Jun 2031",
       "totalUnits": 570,
       "nearestMrt": "Ang Mo Kio MRT",
+      "nearestMrtDistanceMeters": 800,
+      "nearestMrtDistanceSource": "RecordBTO listing MRT distance",
       "sourceUrl": "https://recordbto.com/bto/ang-mo-kio-bto-at-ang-mo-kio-avenue-1"
     },
     {
@@ -441,6 +453,8 @@
       "expectedTop": "Jun 2031",
       "totalUnits": 480,
       "nearestMrt": "Ang Mo Kio MRT",
+      "nearestMrtDistanceMeters": 700,
+      "nearestMrtDistanceSource": "RecordBTO listing MRT distance",
       "sourceUrl": "https://recordbto.com/bto/ang-mo-kio-bto-at-ang-mo-kio-avenue-2"
     },
     {
@@ -509,6 +523,8 @@
       "expectedTop": "Sept 2031",
       "totalUnits": 1210,
       "nearestMrt": "Marymount MRT",
+      "nearestMrtDistanceMeters": 600,
+      "nearestMrtDistanceSource": "RecordBTO listing MRT distance",
       "sourceUrl": "https://recordbto.com/bto/bishan-bto-at-upper-thomson-road"
     },
     {
@@ -577,6 +593,8 @@
       "expectedTop": "Sept 2031",
       "totalUnits": 1960,
       "nearestMrt": "Telok Blangah MRT",
+      "nearestMrtDistanceMeters": 100,
+      "nearestMrtDistanceSource": "RecordBTO listing MRT distance",
       "sourceUrl": "https://recordbto.com/bto/bukit-merah-bto-at-berlayar-avenue"
     },
     {
@@ -645,6 +663,8 @@
       "expectedTop": "Jun 2031",
       "totalUnits": 870,
       "nearestMrt": "Admiralty MRT",
+      "nearestMrtDistanceMeters": 500,
+      "nearestMrtDistanceSource": "RecordBTO listing MRT distance",
       "sourceUrl": "https://recordbto.com/bto/sembawang-bto-at-admiralty-street"
     },
     {
@@ -713,6 +733,8 @@
       "expectedTop": "Jun 2031",
       "totalUnits": 1130,
       "nearestMrt": "Sembawang MRT",
+      "nearestMrtDistanceMeters": 1000,
+      "nearestMrtDistanceSource": "RecordBTO listing MRT distance",
       "sourceUrl": "https://recordbto.com/bto/sembawang-bto-at-sembawang-drive"
     },
     {
@@ -781,6 +803,8 @@
       "expectedTop": "Jun 2031",
       "totalUnits": 640,
       "nearestMrt": "Woodlands MRT",
+      "nearestMrtDistanceMeters": 600,
+      "nearestMrtDistanceSource": "RecordBTO listing MRT distance",
       "sourceUrl": "https://recordbto.com/bto/woodlands-bto-at-woodgrove-avenue"
     },
     {
@@ -825,6 +849,8 @@
       "expectedTop": "Jan 2030",
       "totalUnits": 412,
       "nearestMrt": "Telok Blangah MRT",
+      "nearestMrtDistanceMeters": 500,
+      "nearestMrtDistanceSource": "RecordBTO listing MRT distance",
       "sourceUrl": "https://recordbto.com/bto/berlayar-residences"
     },
     {
@@ -881,6 +907,8 @@
       "expectedTop": "Oct 2029",
       "totalUnits": 538,
       "nearestMrt": "Bishan MRT",
+      "nearestMrtDistanceMeters": 700,
+      "nearestMrtDistanceSource": "RecordBTO listing MRT distance",
       "sourceUrl": "https://recordbto.com/bto/bishan-terraces"
     },
     {
@@ -1061,6 +1089,8 @@
       "expectedTop": "May 2030",
       "totalUnits": 870,
       "nearestMrt": "Mount Pleasant MRT",
+      "nearestMrtDistanceMeters": 200,
+      "nearestMrtDistanceSource": "RecordBTO listing MRT distance",
       "sourceUrl": "https://recordbto.com/bto/mount-pleasant-crest"
     },
     {
@@ -1117,6 +1147,8 @@
       "expectedTop": "Nov 2029",
       "totalUnits": 1425,
       "nearestMrt": "Ang Mo Kio MRT",
+      "nearestMrtDistanceMeters": 600,
+      "nearestMrtDistanceSource": "RecordBTO listing MRT distance",
       "sourceUrl": "https://recordbto.com/bto/oak-ville-at-amk"
     },
     {
@@ -1185,6 +1217,8 @@
       "expectedTop": "Jul 2028",
       "totalUnits": 862,
       "nearestMrt": "Bedok North MRT",
+      "nearestMrtDistanceMeters": 800,
+      "nearestMrtDistanceSource": "RecordBTO listing MRT distance",
       "sourceUrl": "https://recordbto.com/bto/ping-yi-court"
     },
     {
@@ -1229,6 +1263,8 @@
       "expectedTop": "Mar 2030",
       "totalUnits": 1021,
       "nearestMrt": "Redhill MRT",
+      "nearestMrtDistanceMeters": 400,
+      "nearestMrtDistanceSource": "RecordBTO listing MRT distance",
       "sourceUrl": "https://recordbto.com/bto/redhill-peaks"
     },
     {
@@ -1297,6 +1333,8 @@
       "expectedTop": "Oct 2029",
       "totalUnits": 638,
       "nearestMrt": "Pandan Reservoir MRT",
+      "nearestMrtDistanceMeters": 200,
+      "nearestMrtDistanceSource": "RecordBTO listing MRT distance",
       "sourceUrl": "https://recordbto.com/bto/teban-heights"
     },
     {
@@ -1341,6 +1379,8 @@
       "expectedTop": "Jun 2028",
       "totalUnits": 569,
       "nearestMrt": "Yishun MRT",
+      "nearestMrtDistanceMeters": 500,
+      "nearestMrtDistanceSource": "RecordBTO listing MRT distance",
       "sourceUrl": "https://recordbto.com/bto/yishun-glade"
     },
     {

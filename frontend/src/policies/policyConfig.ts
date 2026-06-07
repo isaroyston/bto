@@ -54,6 +54,7 @@ export interface BtoFlatVariant {
   minPrice?: number;
   maxPrice?: number;
   floorAreaSqm?: number;
+  pricePerSqm?: number;
   maxEhg: number;
   suggestedOccupants?: number; // e.g. 2-3 for 3-room
   suggestedTenureYears?: number; // e.g. 25 for first-timers
@@ -111,6 +112,25 @@ export interface BtoHqProjectMeta {
   sourceUrl?: string;
 }
 
+export interface BtoProjectCoordinates {
+  lat: number;
+  lon: number;
+  source?: "btohq-map" | string;
+}
+
+export interface BtoComparisonMetrics {
+  lowestPrice?: number;
+  lowestPricePerSqm?: number;
+  topSortValue?: number;
+  totalUnits?: number;
+  btoType?: string;
+  nearestMrtDistanceMeters?: number;
+  accessibilityRating?: number;
+  amenitiesRating?: number;
+  affordabilityRating?: number;
+  availableFlatTypes?: BtoFlatVariant["type"][];
+}
+
 export interface BtoProject {
   id: string;
   launchMonth: string; // YYYY-MM or FY label
@@ -131,10 +151,14 @@ export interface BtoProject {
   maxPrice?: number;
   waitTimeMonths?: string;
   nearestMrt?: string;
+  nearestMrtDistanceMeters?: number;
+  nearestMrtDistanceSource?: string;
   constructionProgress?: number;
   sourceUrl?: string;
   unitTypes?: string;
   availableFlatTypes?: BtoFlatVariant["type"][];
+  projectCoordinates?: BtoProjectCoordinates;
+  comparisonMetrics?: BtoComparisonMetrics;
   btohq?: BtoHqProjectMeta;
 }
 

@@ -179,6 +179,9 @@ function parseProjectPage(html, listedProject) {
   const town = detail("Town") ?? extractTownFromSummary(listedProject.summary) ?? "Singapore";
   const district = extractDistrict(town);
   const nearestMrt = detail("Nearest MRT");
+  const nearestMrtDistanceMeters = extractNearestMrtDistanceMeters(
+    `${listedProject.summary} ${compactText}`
+  );
   const waitTimeMonths = extractTextMatch(compactText, /Wait Time:\s*([\d/]+\s*months)/i);
   const constructionProgress = toInteger(
     extractTextMatch(compactText, /Construction Progress\s+(\d+)%/i) ??
@@ -207,6 +210,10 @@ function parseProjectPage(html, listedProject) {
     maxPrice: priceRange?.maxPrice ?? null,
     waitTimeMonths,
     nearestMrt,
+    nearestMrtDistanceMeters,
+    nearestMrtDistanceSource: nearestMrtDistanceMeters
+      ? "RecordBTO listing MRT distance"
+      : null,
     constructionProgress,
     sourceUrl: listedProject.url,
   };
@@ -262,6 +269,21 @@ function extractPriceRange(text) {
   const maxPrice = parseMoney(match[2]);
 
   return minPrice && maxPrice ? { minPrice, maxPrice } : null;
+}
+
+function extractNearestMrtDistanceMeters(text) {
+  const match = normalizeWhitespace(text).match(
+    /\b[A-Za-z][A-Za-z\s'-]+MRT\s*\(([\d.]+)\s*(km|m)\)/i
+  );
+
+  if (!match) return null;
+
+  const amount = Number.parseFloat(match[1]);
+  if (!Number.isFinite(amount)) return null;
+
+  return match[2].toLowerCase() === "km"
+    ? Math.round(amount * 1000)
+    : Math.round(amount);
 }
 
 function parseMoney(value) {
