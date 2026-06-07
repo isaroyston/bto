@@ -8,10 +8,6 @@
   payment timing, and BTO comparisons.
 </p>
 
-<p align="center">
-  <img src=".github/assets/showcase.svg" alt="HDB Planner showcase" width="960">
-</p>
-
 ## What It Does
 
 - Estimates loan eligibility from household income.
