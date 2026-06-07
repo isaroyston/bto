@@ -241,31 +241,6 @@
     @apply whitespace-nowrap tabular-nums;
   }
 
-  .recommendation-reason {
-    @apply flex items-center justify-between gap-3 rounded-hdb px-2.5 py-2 text-xs ring-1;
-  }
-
-  .recommendation-reason span {
-    @apply text-warm-stone;
-  }
-
-  .recommendation-reason strong {
-    @apply text-right font-semibold text-heritage-navy;
-  }
-
-  .recommendation-reason-good {
-    background: var(--good-soft);
-    box-shadow: inset 0 0 0 1px oklch(var(--color-futuristic-teal) / 0.12);
-  }
-
-  .recommendation-reason-watch {
-    background: oklch(var(--color-heritage-navy) / 0.055);
-  }
-
-  .recommendation-reason-missing {
-    background: oklch(var(--color-hdb-bg) / 0.7);
-  }
-
   .bto-reveal {
     animation: bto-reveal 180ms ease-out;
   }

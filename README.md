@@ -23,12 +23,6 @@
 - **Plan**: assumptions, loan/downpayment math, money snapshot, and saved plan flow.
 - **BTO Radar**: launch filters, project cards, price record counts, and send-to-plan action.
 
-## AI/ML Direction
-
-The next cut is an explainable housing recommender: a deterministic baseline that
-ranks BTO projects by affordability fit, monthly load, cash risk, data
-confidence, and timing. See [`docs/ai-ml-roadmap.md`](docs/ai-ml-roadmap.md).
-
 ## Structure
 
 - [`frontend`](frontend): Vite React app.
