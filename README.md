@@ -1,13 +1,35 @@
-# HDB Planner
+<p align="center">
+  <img src=".github/assets/logo.svg" alt="HDB Planner" width="640">
+</p>
 
-React + TypeScript planner for Singapore HDB new-flat planning.
+<p align="center">
+  <a href="https://react.dev/"><img alt="React" src="https://img.shields.io/badge/React-19-10282e?style=for-the-badge&labelColor=f4fbfb"></a>
+  <a href="https://www.typescriptlang.org/"><img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-6-2d978c?style=for-the-badge&labelColor=f4fbfb"></a>
+  <a href="https://vite.dev/"><img alt="Vite" src="https://img.shields.io/badge/Vite-8-f1744e?style=for-the-badge&labelColor=f4fbfb"></a>
+</p>
 
-- Estimated loan eligibility from household income.
-- Enhanced CPF Housing Grant lookup for first-timer families.
-- Downpayment, option fee, survey fee, and fire insurance scenarios.
-- Average payment timeline estimates from application through key collection.
-- Flat-size-specific BTO comparisons from the generated RecordBTO backfill.
-- Browser-local scenario saving with JSON import/export for tester handoff.
+<p align="center">
+  <strong>Flat math for BTO humans.</strong><br>
+  A React + TypeScript planner for Singapore HDB new-flat decisions, grants,
+  payment timing, and BTO comparisons.
+</p>
+
+<p align="center">
+  <img src=".github/assets/showcase.svg" alt="HDB Planner showcase" width="960">
+</p>
+
+## What It Does
+
+- Estimates loan eligibility from household income.
+- Looks up Enhanced CPF Housing Grant bands for first-timer families.
+- Models downpayment, option fee, survey fee, and fire insurance scenarios.
+- Builds an average payment timeline from application through key collection.
+- Compares flat-size-specific BTO projects from the generated RecordBTO backfill.
+- Saves scenarios in the browser with JSON import/export for tester handoff.
+
+## Screenshot
+
+![HDB Planner app screenshot](.github/assets/screenshot.svg)
 
 ## Structure
 

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="180" viewBox="0 0 640 180" role="img" aria-labelledby="title desc">
+  <title id="title">HDB Planner logo</title>
+  <desc id="desc">A compact house mark beside playful HDB Planner lettering.</desc>
+  <defs>
+    <linearGradient id="sky" x1="66" x2="143" y1="30" y2="151" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#54d6c6"/>
+      <stop offset="1" stop-color="#163a45"/>
+    </linearGradient>
+    <filter id="lift" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#10282e" flood-opacity=".15"/>
+    </filter>
+  </defs>
+  <rect width="640" height="180" rx="28" fill="#f5fafb"/>
+  <g filter="url(#lift)">
+    <path d="M88 126V83.5L121 58l33 25.5V126h-24V98h-22v28z" fill="url(#sky)"/>
+    <path d="M78 88.5 121 55l43 33.5" fill="none" stroke="#10282e" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M100 127h76" stroke="#f06d43" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="93" cy="52" r="11" fill="#f6c85f"/>
+    <path d="M137 75h18M137 90h18M92 96h14" stroke="#f5fafb" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <text x="206" y="86" fill="#10282e" font-family="'Cooper Black', 'Arial Rounded MT Bold', 'Trebuchet MS', system-ui, sans-serif" font-size="52" font-weight="900">
+    <tspan rotate="-4">H</tspan><tspan rotate="2">D</tspan><tspan rotate="-2">B</tspan>
+    <tspan dx="12" rotate="1">Planner</tspan>
+  </text>
+  <text x="210" y="119" fill="#496269" font-family="'Plus Jakarta Sans', Inter, system-ui, sans-serif" font-size="18" font-weight="700">
+    CPF, grants, payments, and BTO comparisons without spreadsheet fog.
+  </text>
+  <g font-family="'Plus Jakarta Sans', Inter, system-ui, sans-serif" font-size="13" font-weight="800">
+    <rect x="210" y="134" width="82" height="26" rx="13" fill="#e0f5f2"/>
+    <text x="229" y="152" fill="#173f44">BTO radar</text>
+    <rect x="302" y="134" width="103" height="26" rx="13" fill="#fff0db"/>
+    <text x="321" y="152" fill="#6a3d12">CPF math</text>
+    <rect x="415" y="134" width="118" height="26" rx="13" fill="#e7eefc"/>
+    <text x="434" y="152" fill="#263f78">policy-backed</text>
+  </g>
+</svg>
