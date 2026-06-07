@@ -3,12 +3,6 @@
 </p>
 
 <p align="center">
-  <a href="https://react.dev/"><img alt="React" src="https://img.shields.io/badge/React-19-10282e?style=for-the-badge&labelColor=f4fbfb"></a>
-  <a href="https://www.typescriptlang.org/"><img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-6-2d978c?style=for-the-badge&labelColor=f4fbfb"></a>
-  <a href="https://vite.dev/"><img alt="Vite" src="https://img.shields.io/badge/Vite-8-f1744e?style=for-the-badge&labelColor=f4fbfb"></a>
-</p>
-
-<p align="center">
   <strong>Flat math for BTO humans.</strong><br>
   A React + TypeScript planner for Singapore HDB new-flat decisions, grants,
   payment timing, and BTO comparisons.

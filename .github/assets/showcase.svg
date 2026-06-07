@@ -1,93 +1,85 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
-  <title id="title">HDB Planner GitHub showcase</title>
-  <desc id="desc">A stylized product showcase with BTO project cards, affordability controls, and payment milestones.</desc>
+  <title id="title">HDB Planner showcase</title>
+  <desc id="desc">A polished product preview showing HDB Planner affordability controls, BTO cards, and payment timing.</desc>
   <defs>
-    <linearGradient id="page" x1="0" x2="1" y1="0" y2="1">
-      <stop stop-color="#f4fbfb"/>
-      <stop offset=".58" stop-color="#eef5f7"/>
-      <stop offset="1" stop-color="#f9f2e8"/>
+    <linearGradient id="shell" x1="0" x2="1" y1="0" y2="1">
+      <stop stop-color="#081316"/>
+      <stop offset=".7" stop-color="#10282e"/>
+      <stop offset="1" stop-color="#163f46"/>
     </linearGradient>
-    <linearGradient id="panel" x1="0" x2="1" y1="0" y2="1">
-      <stop stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#f7fbfb"/>
-    </linearGradient>
-    <filter id="soft" x="-15%" y="-15%" width="130%" height="130%">
-      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#17343c" flood-opacity=".16"/>
+    <filter id="float" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#000000" flood-opacity=".28"/>
     </filter>
   </defs>
-  <rect width="1280" height="720" fill="url(#page)"/>
-  <circle cx="1110" cy="98" r="122" fill="#fa9c6a" opacity=".15"/>
-  <circle cx="120" cy="612" r="162" fill="#58d4c5" opacity=".18"/>
+  <rect width="1280" height="720" fill="url(#shell)"/>
+  <circle cx="1072" cy="96" r="230" fill="#58d4c5" opacity=".08"/>
+  <circle cx="104" cy="660" r="250" fill="#f1744e" opacity=".08"/>
 
-  <g transform="translate(78 64)">
-    <path d="M35 92V52L68 27l33 25v40H78V67H58v25z" fill="#19424a"/>
-    <path d="M25 58 68 25l43 33" fill="none" stroke="#19424a" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M40 94h72" stroke="#f1744e" stroke-width="7" stroke-linecap="round"/>
-    <text x="135" y="63" fill="#10282e" font-family="'Cooper Black', 'Arial Rounded MT Bold', 'Trebuchet MS', system-ui, sans-serif" font-size="60" font-weight="900">
-      <tspan rotate="-4">H</tspan><tspan rotate="2">D</tspan><tspan rotate="-2">B</tspan>
-      <tspan dx="14" rotate="1">Planner</tspan>
-    </text>
-    <text x="139" y="98" fill="#496269" font-family="'Plus Jakarta Sans', Inter, system-ui, sans-serif" font-size="21" font-weight="700">
-      Flat math for BTO humans. CPF grants, payment timing, and project search in one place.
-    </text>
+  <g transform="translate(88 68)">
+    <text x="0" y="62" fill="#f7fbfb" font-family="'Arial Rounded MT Bold', 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif" font-size="64" font-weight="900">HDB Planner</text>
+    <text x="2" y="102" fill="#b9d1d5" font-family="'Plus Jakarta Sans', Inter, 'Segoe UI', system-ui, sans-serif" font-size="21" font-weight="700">Plan grants, payments, and BTO tradeoffs without turning the tab into a spreadsheet.</text>
   </g>
 
-  <g filter="url(#soft)" transform="translate(86 178)">
-    <rect width="1092" height="432" rx="22" fill="#ffffff"/>
-    <rect x="22" y="24" width="1048" height="390" rx="18" fill="url(#panel)" stroke="#d9e4e7"/>
-
-    <g transform="translate(52 52)">
-      <text x="0" y="0" fill="#10282e" font-family="'Plus Jakarta Sans', Inter, system-ui, sans-serif" font-size="24" font-weight="800">Purchase plan</text>
-      <text x="0" y="31" fill="#587078" font-family="'Plus Jakarta Sans', Inter, system-ui, sans-serif" font-size="15" font-weight="650">Drag the assumptions, keep the consequences visible.</text>
-      <rect y="61" width="302" height="72" rx="12" fill="#10282e"/>
-      <text x="22" y="91" fill="#e9f5f4" font-family="'Plus Jakarta Sans', Inter, system-ui, sans-serif" font-size="14" font-weight="700">Estimated loan eligibility</text>
-      <text x="22" y="121" fill="#ffffff" font-family="'Plus Jakarta Sans', Inter, system-ui, sans-serif" font-size="31" font-weight="850">$360,000</text>
-
-      <g transform="translate(0 160)" font-family="'Plus Jakarta Sans', Inter, system-ui, sans-serif">
-        <text y="0" fill="#10282e" font-size="14" font-weight="800">Combined monthly income</text>
-        <rect y="16" width="302" height="9" rx="5" fill="#d9e4e7"/>
-        <rect y="16" width="178" height="9" rx="5" fill="#2d978c"/>
-        <circle cx="178" cy="20.5" r="13" fill="#2d978c" stroke="#fff" stroke-width="4"/>
-        <text x="0" y="60" fill="#10282e" font-size="14" font-weight="800">Flat price</text>
-        <rect y="76" width="302" height="9" rx="5" fill="#d9e4e7"/>
-        <rect y="76" width="226" height="9" rx="5" fill="#f1744e"/>
-        <circle cx="226" cy="80.5" r="13" fill="#f1744e" stroke="#fff" stroke-width="4"/>
-      </g>
+  <g transform="translate(88 166)" filter="url(#float)">
+    <rect width="1104" height="472" rx="18" fill="#f7fbfb"/>
+    <rect y="0" width="1104" height="54" rx="18" fill="#ffffff"/>
+    <path d="M0 54h1104" stroke="#d8e5e7"/>
+    <g transform="translate(24 15)">
+      <rect width="24" height="24" rx="6" fill="#ffffff" stroke="#d3e2e5"/>
+      <path d="M7 19V10.5L12 7l5 3.5V19h-4v-5h-2v5z" fill="#173f44"/>
+      <path d="M5 12 12 6l7 6" fill="none" stroke="#173f44" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M7 20h12" stroke="#f1744e" stroke-width="1.8" stroke-linecap="round"/>
+      <text x="36" y="18" fill="#10282e" font-family="'Plus Jakarta Sans', Inter, 'Segoe UI', system-ui, sans-serif" font-size="15" font-weight="850">HDB Planner</text>
     </g>
 
-    <g transform="translate(408 52)">
-      <text x="0" y="0" fill="#10282e" font-family="'Plus Jakarta Sans', Inter, system-ui, sans-serif" font-size="24" font-weight="800">BTO radar</text>
-      <text x="0" y="31" fill="#587078" font-family="'Plus Jakarta Sans', Inter, system-ui, sans-serif" font-size="15" font-weight="650">Generated RecordBTO backfill with town and flat filters.</text>
-      <g font-family="'Plus Jakarta Sans', Inter, system-ui, sans-serif">
-        <rect y="61" width="242" height="124" rx="13" fill="#f8fbfb" stroke="#d9e4e7"/>
-        <text x="18" y="91" fill="#10282e" font-size="17" font-weight="850">Queenstown Arc</text>
-        <text x="18" y="119" fill="#587078" font-size="14" font-weight="650">4-room from $582k</text>
-        <rect x="18" y="143" width="68" height="24" rx="5" fill="#fff1d2"/>
-        <text x="32" y="160" fill="#6a3d12" font-size="12" font-weight="850">Prime</text>
+    <g transform="translate(48 96)" font-family="'Plus Jakarta Sans', Inter, 'Segoe UI', system-ui, sans-serif">
+      <text x="0" y="0" fill="#10282e" font-size="30" font-weight="850">BTO Radar</text>
+      <text x="0" y="32" fill="#526a72" font-size="15" font-weight="700">Compare generated RecordBTO projects by launch year, town, and flat type.</text>
 
-        <rect x="262" y="61" width="242" height="124" rx="13" fill="#f8fbfb" stroke="#d9e4e7"/>
-        <text x="280" y="91" fill="#10282e" font-size="17" font-weight="850">Tampines Green</text>
-        <text x="280" y="119" fill="#587078" font-size="14" font-weight="650">4-room from $420k</text>
-        <rect x="280" y="143" width="78" height="24" rx="5" fill="#dff4ee"/>
-        <text x="294" y="160" fill="#173f44" font-size="12" font-weight="850">Standard</text>
+      <g transform="translate(0 66)">
+        <rect width="310" height="250" rx="10" fill="#ffffff" stroke="#d8e5e7"/>
+        <text x="22" y="36" fill="#10282e" font-size="18" font-weight="850">Assumptions</text>
+        <text x="22" y="76" fill="#10282e" font-size="13" font-weight="800">Combined monthly income</text>
+        <rect x="22" y="92" width="240" height="9" rx="5" fill="#dbe7ea"/>
+        <rect x="22" y="92" width="142" height="9" rx="5" fill="#2d978c"/>
+        <circle cx="164" cy="96.5" r="13" fill="#2d978c" stroke="#fff" stroke-width="4"/>
+        <text x="22" y="138" fill="#10282e" font-size="13" font-weight="800">Flat price</text>
+        <rect x="22" y="154" width="240" height="9" rx="5" fill="#dbe7ea"/>
+        <rect x="22" y="154" width="184" height="9" rx="5" fill="#f1744e"/>
+        <circle cx="206" cy="158.5" r="13" fill="#f1744e" stroke="#fff" stroke-width="4"/>
+        <rect x="22" y="194" width="240" height="36" rx="8" fill="#10282e"/>
+        <text x="42" y="217" fill="#ffffff" font-size="14" font-weight="850">$360,000 loan estimate</text>
+      </g>
 
-        <rect y="207" width="504" height="84" rx="13" fill="#10282e"/>
-        <text x="20" y="240" fill="#e9f5f4" font-size="14" font-weight="700">Payment timeline</text>
-        <path d="M24 262h444" stroke="#ffffff" stroke-opacity=".34" stroke-width="4" stroke-linecap="round"/>
-        <circle cx="24" cy="262" r="10" fill="#58d4c5"/>
-        <circle cx="188" cy="262" r="10" fill="#f6c85f"/>
-        <circle cx="338" cy="262" r="10" fill="#f1744e"/>
-        <circle cx="468" cy="262" r="10" fill="#ffffff"/>
+      <g transform="translate(346 66)">
+        <rect width="566" height="250" rx="10" fill="#ffffff" stroke="#d8e5e7"/>
+        <text x="22" y="36" fill="#10282e" font-size="18" font-weight="850">Latest 4-room matches</text>
+        <g transform="translate(22 62)">
+          <rect width="246" height="108" rx="9" fill="#fbfefe" stroke="#d8e5e7"/>
+          <text x="16" y="30" fill="#10282e" font-size="16" font-weight="850">Queenstown Meadow</text>
+          <text x="16" y="55" fill="#526a72" font-size="13" font-weight="700">4-room from $582k</text>
+          <rect x="16" y="72" width="52" height="22" rx="5" fill="#e4ecff"/>
+          <text x="29" y="87" fill="#243e78" font-size="11" font-weight="850">Plus</text>
+        </g>
+        <g transform="translate(290 62)">
+          <rect width="246" height="108" rx="9" fill="#fbfefe" stroke="#d8e5e7"/>
+          <text x="16" y="30" fill="#10282e" font-size="16" font-weight="850">Tampines Green</text>
+          <text x="16" y="55" fill="#526a72" font-size="13" font-weight="700">4-room from $420k</text>
+          <rect x="16" y="72" width="82" height="22" rx="5" fill="#dff4ee"/>
+          <text x="28" y="87" fill="#173f44" font-size="11" font-weight="850">Standard</text>
+        </g>
+        <rect x="22" y="190" width="514" height="34" rx="8" fill="#eef6f7"/>
+        <text x="42" y="212" fill="#526a72" font-size="13" font-weight="750">Generated data stays separate from policy constants.</text>
       </g>
     </g>
   </g>
 
-  <g font-family="'Plus Jakarta Sans', Inter, system-ui, sans-serif" font-size="16" font-weight="850">
-    <rect x="86" y="644" width="164" height="34" rx="17" fill="#10282e"/>
-    <text x="111" y="667" fill="#ffffff">React + TypeScript</text>
-    <rect x="264" y="644" width="158" height="34" rx="17" fill="#e0f5f2"/>
-    <text x="289" y="667" fill="#173f44">RecordBTO data</text>
-    <rect x="436" y="644" width="160" height="34" rx="17" fill="#fff0db"/>
-    <text x="461" y="667" fill="#6a3d12">local scenarios</text>
+  <g transform="translate(88 664)" font-family="'Plus Jakarta Sans', Inter, 'Segoe UI', system-ui, sans-serif" font-size="15" font-weight="850">
+    <rect width="168" height="34" rx="17" fill="#dff8f4"/>
+    <text x="28" y="23" fill="#12363c">React + TypeScript</text>
+    <rect x="184" width="154" height="34" rx="17" fill="#fff0d7"/>
+    <text x="212" y="23" fill="#61380f">RecordBTO data</text>
+    <rect x="354" width="132" height="34" rx="17" fill="#e4ecff"/>
+    <text x="382" y="23" fill="#243e78">local plans</text>
   </g>
 </svg>
