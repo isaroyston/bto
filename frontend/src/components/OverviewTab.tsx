@@ -4,7 +4,7 @@ import {
   type EhgFamiliesBand,
 } from "../policies/policyConfig";
 import { FactItem } from "./FactItem";
-import type { FlatType, TabKey } from "../types";
+import type { BtoDecisionScore, FlatType, TabKey } from "../types";
 import { currency } from "../utils/format";
 import {
   getBtoProjectSourceLabel,
@@ -19,6 +19,7 @@ type OverviewTabProps = {
   selectedProject: BtoProject | null;
   flatType: FlatType;
   flatPrice: number;
+  decisionScore: BtoDecisionScore | null;
   completedMilestoneCount: number;
   totalMilestoneCount: number;
   onSelectTab: (tab: TabKey) => void;
@@ -32,6 +33,7 @@ export function OverviewTab({
   selectedProject,
   flatType,
   flatPrice,
+  decisionScore,
   completedMilestoneCount,
   totalMilestoneCount,
   onSelectTab,
@@ -196,6 +198,7 @@ export function OverviewTab({
           selectedProject={selectedProject}
           flatType={flatType}
           flatPrice={flatPrice}
+          decisionScore={decisionScore}
         />
 
         {!hasProject && (
@@ -291,10 +294,12 @@ function ProjectContextPanel({
   selectedProject,
   flatType,
   flatPrice,
+  decisionScore,
 }: {
   selectedProject: BtoProject | null;
   flatType: FlatType;
   flatPrice: number;
+  decisionScore: BtoDecisionScore | null;
 }) {
   return (
     <section className="panel overview-context-panel">
@@ -331,8 +336,20 @@ function ProjectContextPanel({
             label="Nearest MRT"
             value={selectedProject.nearestMrt ?? "Not listed"}
           />
+          <FactItem
+            label="Location context"
+            value={formatOverviewLocationContext(selectedProject)}
+          />
+          <FactItem
+            label="Decision score"
+            value={formatOverviewScore(decisionScore)}
+          />
           <div className="overview-source-note">
-            <span>{getBtoProjectSourceNote(selectedProject)}</span>
+            <span>
+              {decisionScore?.reasons.length
+                ? `${decisionScore.confidence}: ${decisionScore.reasons.join(", ")}.`
+                : getBtoProjectSourceNote(selectedProject)}
+            </span>
             {selectedProject.sourceUrl && (
               <a href={selectedProject.sourceUrl} target="_blank" rel="noreferrer">
                 View source
@@ -352,6 +369,17 @@ function ProjectContextPanel({
       )}
     </section>
   );
+}
+
+function formatOverviewScore(score: BtoDecisionScore | null) {
+  if (!score || score.total === null) return "Not enough data";
+  return `${score.total}/100`;
+}
+
+function formatOverviewLocationContext(project: BtoProject) {
+  const tags = project.locationSignals?.contextTags ?? [];
+  if (tags.length) return tags.join(", ");
+  return project.locationSignals?.centralityLabel ?? "Not listed";
 }
 
 function PolicyFact({ label, value }: { label: string; value: string }) {

@@ -13,6 +13,45 @@ const OUTPUT_PATH = fileURLToPath(OUTPUT_URL);
 const RAIL_STATIONS_PATH = fileURLToPath(RAIL_STATIONS_URL);
 const FLAT_TYPE_ORDER = ["2-room", "3-room", "4-room", "5-room", "executive"];
 const MRT_DISTANCE_SOURCE = "URA Master Plan 2019 rail station centroid, straight-line estimate";
+const LOCATION_SIGNAL_SOURCE =
+  "Station centrality estimate from URA rail station geometry and curated town context";
+const CORE_ANCHOR_STATIONS = ["Raffles Place", "City Hall", "Dhoby Ghaut", "Orchard"];
+const LOCATION_CONTEXT_BY_TOWN = {
+  "ang mo kio": { tags: ["Central mature town"], adjustment: 6 },
+  bedok: { tags: ["Mature town", "East region"], adjustment: 2 },
+  bidadari: { tags: ["City fringe", "Emerging estate"], adjustment: 6 },
+  bishan: { tags: ["Central mature town"], adjustment: 8 },
+  "bukit merah": { tags: ["City fringe", "Central mature town", "Waterfront access"], adjustment: 10 },
+  "bukit timah": { tags: ["Central mature town"], adjustment: 8 },
+  clementi: { tags: ["Mature town", "Education corridor"], adjustment: 5 },
+  "jurong east": { tags: ["Regional centre"], adjustment: 5 },
+  "kallang/whampoa": { tags: ["City fringe", "Central mature town"], adjustment: 10 },
+  queenstown: { tags: ["City fringe", "Central mature town"], adjustment: 9 },
+  serangoon: { tags: ["City fringe", "Mature town"], adjustment: 5 },
+  "telok blangah": { tags: ["City fringe", "Waterfront access"], adjustment: 10 },
+  "toa payoh": { tags: ["City fringe", "Central mature town"], adjustment: 9 },
+  woodlands: { tags: ["Regional centre", "North region"], adjustment: 2 },
+  yishun: { tags: ["North region"], adjustment: -2 },
+  sembawang: { tags: ["North region"], adjustment: -3 },
+  punggol: { tags: ["Waterfront access", "Emerging estate"], adjustment: 0 },
+  sengkang: { tags: ["Emerging estate"], adjustment: -1 },
+  tengah: { tags: ["Emerging estate"], adjustment: -4 },
+  tampines: { tags: ["Regional centre", "Mature town"], adjustment: 4 },
+};
+const WATERFRONT_TERMS = [
+  "berlayar",
+  "telok blangah",
+  "redhill",
+  "waterway",
+  "punggol",
+  "pasir ris",
+  "queenstown",
+  "dawson",
+  "keppel",
+  "coast",
+  "river",
+  "bay",
+];
 
 async function main() {
   const recordbtoPayload = JSON.parse(await readFile(RECORDBTO_PATH, "utf8"));
@@ -144,7 +183,7 @@ function enrichProject(project, railStations) {
   const projectCoordinates =
     project.projectCoordinates ?? parseMapCoordinates(project.btohq?.media?.mapUrl);
   const matchedStation =
-    project.nearestMrt && projectCoordinates
+    project.nearestMrt
       ? findRailStationByName(project.nearestMrt, railStations)
       : null;
   const nearestStation = projectCoordinates
@@ -168,6 +207,11 @@ function enrichProject(project, railStations) {
   const nearestMrtDistanceSource =
     project.nearestMrtDistanceSource ??
     (nearestStation ? MRT_DISTANCE_SOURCE : undefined);
+  const locationSignals = buildLocationSignals({
+    ...project,
+    nearestMrt,
+    projectCoordinates,
+  }, matchedStation ?? nearestStation, railStations);
 
   return {
     ...project,
@@ -176,12 +220,14 @@ function enrichProject(project, railStations) {
     nearestMrt,
     nearestMrtDistanceMeters,
     nearestMrtDistanceSource,
+    locationSignals,
     comparisonMetrics: buildComparisonMetrics({
       ...project,
       flatVariants,
       nearestMrt,
       projectCoordinates,
       nearestMrtDistanceMeters,
+      locationSignals,
     }),
   };
 }
@@ -219,6 +265,7 @@ function buildComparisonMetrics(project) {
     totalUnits: project.totalUnits,
     btoType: project.btoType,
     nearestMrtDistanceMeters: project.nearestMrtDistanceMeters,
+    centralityScore: project.locationSignals?.centralityScore,
     accessibilityRating: ratings.accessibility,
     amenitiesRating: ratings.amenities,
     affordabilityRating: ratings.affordability,
@@ -226,6 +273,107 @@ function buildComparisonMetrics(project) {
       ? project.availableFlatTypes
       : (project.flatVariants ?? []).map((variant) => variant.type),
   };
+}
+
+function buildLocationSignals(project, station, railStations) {
+  const matchedStation = station ?? findRailStationByName(project.nearestMrt, railStations);
+  const context = getLocationContext(project);
+
+  if (!matchedStation) {
+    return context.tags.length
+      ? {
+          centralityLabel: context.tags[0],
+          contextTags: context.tags,
+          source: "Curated town context",
+        }
+      : undefined;
+  }
+
+  const anchor = findNearestCoreAnchor(matchedStation, railStations);
+  const anchorScore = anchor
+    ? centralityScoreFromDistance(anchor.distanceMeters)
+    : 60;
+  const interchangeBonus = /interchange/i.test(matchedStation.name) ? 8 : 0;
+  const centralityScore = clamp(
+    Math.round(anchorScore + interchangeBonus + context.adjustment),
+    20,
+    100
+  );
+
+  return {
+    centralityScore,
+    centralityLabel: centralityLabel(centralityScore),
+    contextTags: context.tags,
+    nearestCentralAnchor: anchor?.station ? titleCaseStation(anchor.station.name) : undefined,
+    centralAnchorDistanceMeters: anchor?.distanceMeters,
+    matchedStation: titleCaseStation(matchedStation.name),
+    source: LOCATION_SIGNAL_SOURCE,
+  };
+}
+
+function getLocationContext(project) {
+  const locationKey = normalizeLocationKey(project.location);
+  const districtKey = normalizeLocationKey(project.district);
+  const configured =
+    LOCATION_CONTEXT_BY_TOWN[locationKey] ??
+    LOCATION_CONTEXT_BY_TOWN[districtKey] ??
+    { tags: [], adjustment: 0 };
+  const tags = new Set(configured.tags);
+  const searchable = `${project.name ?? ""} ${project.location ?? ""} ${project.address ?? ""} ${project.nearestMrt ?? ""}`.toLowerCase();
+
+  if (WATERFRONT_TERMS.some((term) => searchable.includes(term))) {
+    tags.add("Waterfront access");
+  }
+
+  if (/prime/i.test(project.btoType ?? "") || project.btohq?.isPLH) {
+    tags.add("Prime/Plus context");
+  }
+
+  return {
+    adjustment: configured.adjustment,
+    tags: Array.from(tags),
+  };
+}
+
+function findNearestCoreAnchor(station, railStations) {
+  const anchors = CORE_ANCHOR_STATIONS
+    .map((name) => findRailStationByName(name, railStations))
+    .filter(Boolean);
+  let nearest = null;
+
+  for (const anchor of anchors) {
+    const distanceMeters = Math.round(
+      haversineMeters(station.lat, station.lon, anchor.lat, anchor.lon)
+    );
+
+    if (!nearest || distanceMeters < nearest.distanceMeters) {
+      nearest = {
+        station: anchor,
+        distanceMeters,
+      };
+    }
+  }
+
+  return nearest;
+}
+
+function centralityScoreFromDistance(distanceMeters) {
+  if (distanceMeters <= 2000) return 100;
+  if (distanceMeters <= 4000) return 92;
+  if (distanceMeters <= 6000) return 84;
+  if (distanceMeters <= 8000) return 74;
+  if (distanceMeters <= 10000) return 64;
+  if (distanceMeters <= 14000) return 52;
+  if (distanceMeters <= 18000) return 42;
+  return 35;
+}
+
+function centralityLabel(score) {
+  if (score >= 85) return "Central / city fringe";
+  if (score >= 72) return "Good central access";
+  if (score >= 58) return "Regional access";
+  if (score >= 45) return "Outer-town access";
+  return "Longer city access";
 }
 
 function toBtohqMeta(project) {
@@ -366,6 +514,7 @@ function findRailStationByName(value, railStations) {
   return (
     railStations.find((station) => normalizeStationName(station.name) === target) ??
     railStations.find((station) => target.includes(normalizeStationName(station.name))) ??
+    railStations.find((station) => normalizeStationName(station.name).includes(target)) ??
     null
   );
 }
@@ -373,8 +522,15 @@ function findRailStationByName(value, railStations) {
 function normalizeStationName(value) {
   return String(value ?? "")
     .toLowerCase()
-    .replace(/\bmrt\b|\bstation\b/g, "")
+    .replace(/\bmrt\b|\bstation\b|\binterchange\b|\blrt\b/g, "")
     .replace(/[^a-z0-9]+/g, "");
+}
+
+function normalizeLocationKey(value) {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function haversineMeters(latA, lonA, latB, lonB) {
@@ -392,6 +548,10 @@ function haversineMeters(latA, lonA, latB, lonB) {
 
 function toRadians(value) {
   return (value * Math.PI) / 180;
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
 }
 
 function titleCaseStation(value) {

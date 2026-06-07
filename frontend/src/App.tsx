@@ -21,6 +21,9 @@ import { useBtoProjects } from "./hooks/useBtoProjects";
 import { POLICY_CONFIG } from "./policies/policyConfig";
 import type {
   FinancingType,
+  BtoDecisionScore,
+  BtoScoreMode,
+  BtoScorePreset,
   FlatType,
   SchemeType,
   TabKey,
@@ -32,6 +35,7 @@ import {
   getAvailableYears,
   getEhgBand,
 } from "./utils/bto";
+import { scoreBtoProject } from "./utils/btoScoring";
 import { parseLaunchMonthInput } from "./utils/date";
 import { clampNumber } from "./utils/format";
 import { buildPaymentTimeline } from "./utils/paymentTimeline";
@@ -84,6 +88,12 @@ function App() {
     initialPlan?.yearFilter ?? "latest"
   );
   const [townQuery, setTownQuery] = useState(initialPlan?.townQuery ?? "");
+  const [btoScoreMode, setBtoScoreMode] = useState<BtoScoreMode>(
+    initialPlan?.btoScoreMode ?? "buyer-fit"
+  );
+  const [btoScorePreset, setBtoScorePreset] = useState<BtoScorePreset>(
+    initialPlan?.btoScorePreset ?? "balanced"
+  );
   const [selectedBtoProjectId, setSelectedBtoProjectId] = useState<string | null>(
     initialPlan?.selectedBtoProjectId ?? null
   );
@@ -190,6 +200,25 @@ function App() {
     () => filterBtoProjects(btoProjects, activeYear, townQuery, flatType),
     [activeYear, btoProjects, flatType, townQuery]
   );
+  const selectedDecisionScore = useMemo<BtoDecisionScore | null>(() => {
+    if (!selectedBtoProject) return null;
+
+    const cohortProjects = btoProjects.filter(
+      (project) => project.launchMonth === selectedBtoProject.launchMonth
+    );
+
+    return scoreBtoProject(
+      selectedBtoProject,
+      {
+        flatType,
+        loanAmount,
+        ehgGrant,
+        cohortProjects,
+      },
+      "buyer-fit",
+      btoScorePreset
+    );
+  }, [btoProjects, btoScorePreset, ehgGrant, flatType, loanAmount, selectedBtoProject]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = themeMode;
@@ -290,6 +319,8 @@ function App() {
       loanInterestRate,
       yearFilter,
       townQuery,
+      btoScoreMode,
+      btoScorePreset,
       selectedBtoProjectId,
       applicationMonth,
       completedMilestones: activeCompletedMilestones,
@@ -350,6 +381,7 @@ function App() {
             selectedProject={selectedBtoProject}
             flatType={flatType}
             flatPrice={flatPrice}
+            decisionScore={selectedDecisionScore}
             completedMilestoneCount={activeCompletedMilestones.length}
             totalMilestoneCount={timeline.length}
             onSelectTab={setActiveTab}
@@ -404,6 +436,12 @@ function App() {
             townQuery={townQuery}
             filteredProjects={filteredProjects}
             selectedFlatType={flatType}
+            loanAmount={loanAmount}
+            ehgGrant={ehgGrant}
+            scoreMode={btoScoreMode}
+            scorePreset={btoScorePreset}
+            onScoreModeChange={setBtoScoreMode}
+            onScorePresetChange={setBtoScorePreset}
             onRetry={handleRetryBto}
             onYearFilterChange={handleYearFilterChange}
             onTownQueryChange={handleTownQueryChange}

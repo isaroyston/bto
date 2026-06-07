@@ -154,6 +154,11 @@
     border-color: var(--line-strong);
   }
 
+  .control:focus {
+    outline: 2px solid oklch(var(--color-futuristic-teal));
+    outline-offset: 2px;
+  }
+
   .interactive-slider {
     @apply h-2 w-full appearance-none rounded-full bg-heritage-navy/15 outline-none;
   }
@@ -163,17 +168,25 @@
   }
 
   .btn-primary {
-    @apply rounded-hdb bg-heritage-navy px-4 py-2 text-sm font-semibold text-hdb-bg transition-colors hover:bg-heritage-navy/90 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-hdb bg-heritage-navy px-4 py-2 text-sm font-semibold text-hdb-bg transition-colors hover:bg-heritage-navy/90 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .btn-secondary {
-    @apply rounded-hdb border px-4 py-2 text-sm font-semibold text-heritage-navy transition-colors hover:bg-heritage-navy/5 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-hdb border px-4 py-2 text-sm font-semibold text-heritage-navy transition-colors hover:bg-heritage-navy/5 disabled:cursor-not-allowed disabled:opacity-50;
     background: var(--surface);
     border-color: var(--line-strong);
   }
 
   .btn-accent {
-    @apply rounded-hdb bg-futuristic-teal px-4 py-2 text-sm font-medium text-hdb-bg transition-colors hover:bg-electric-mint disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-hdb bg-futuristic-teal px-4 py-2 text-sm font-medium text-hdb-bg transition-colors hover:bg-electric-mint disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary:focus-visible,
+  .btn-secondary:focus-visible,
+  .btn-accent:focus-visible,
+  .scenario-segmented-control button:focus-visible {
+    outline: 2px solid oklch(var(--color-futuristic-teal));
+    outline-offset: 2px;
   }
 
   .source-credit-row {
@@ -197,6 +210,15 @@
 
   .project-source-credit {
     @apply border-t border-heritage-navy/10 pt-3 text-xs text-warm-stone;
+  }
+
+  .project-card-title {
+    display: -webkit-box;
+    min-height: 2.5rem;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    text-wrap: pretty;
   }
 
   .project-type-badge {

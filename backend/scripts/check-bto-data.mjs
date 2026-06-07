@@ -43,6 +43,20 @@ async function main() {
     ) {
       errors.push(`${project.id} has an invalid MRT distance estimate.`);
     }
+
+    if (project.locationSignals) {
+      const score = project.locationSignals.centralityScore;
+      if (
+        score !== undefined &&
+        (!Number.isFinite(score) || score < 0 || score > 100)
+      ) {
+        errors.push(`${project.id} has an invalid centrality score.`);
+      }
+
+      if (score !== undefined && !project.locationSignals.source) {
+        errors.push(`${project.id} has centrality score without a source.`);
+      }
+    }
   }
 
   if (errors.length) {
@@ -53,10 +67,13 @@ async function main() {
   const distanceCount = projects.filter((project) =>
     Number.isFinite(project.nearestMrtDistanceMeters)
   ).length;
+  const centralityCount = projects.filter((project) =>
+    Number.isFinite(project.locationSignals?.centralityScore)
+  ).length;
   const btohqOnlyCount = projects.filter((project) => project.dataSource === "btohq").length;
 
   console.log(
-    `Checked ${projects.length} projects: ${pricedProjectCount} with prices, ${distanceCount} with MRT distance estimates, ${btohqOnlyCount} BTOHQ-only.`
+    `Checked ${projects.length} projects: ${pricedProjectCount} with prices, ${distanceCount} with MRT distance estimates, ${centralityCount} with centrality, ${btohqOnlyCount} BTOHQ-only.`
   );
 }
 

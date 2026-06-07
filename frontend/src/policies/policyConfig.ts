@@ -118,6 +118,16 @@ export interface BtoProjectCoordinates {
   source?: "btohq-map" | string;
 }
 
+export interface BtoLocationSignals {
+  centralityScore?: number;
+  centralityLabel?: string;
+  contextTags?: string[];
+  nearestCentralAnchor?: string;
+  centralAnchorDistanceMeters?: number;
+  matchedStation?: string;
+  source?: string;
+}
+
 export interface BtoComparisonMetrics {
   lowestPrice?: number;
   lowestPricePerSqm?: number;
@@ -125,6 +135,7 @@ export interface BtoComparisonMetrics {
   totalUnits?: number;
   btoType?: string;
   nearestMrtDistanceMeters?: number;
+  centralityScore?: number;
   accessibilityRating?: number;
   amenitiesRating?: number;
   affordabilityRating?: number;
@@ -158,6 +169,7 @@ export interface BtoProject {
   unitTypes?: string;
   availableFlatTypes?: BtoFlatVariant["type"][];
   projectCoordinates?: BtoProjectCoordinates;
+  locationSignals?: BtoLocationSignals;
   comparisonMetrics?: BtoComparisonMetrics;
   btohq?: BtoHqProjectMeta;
 }

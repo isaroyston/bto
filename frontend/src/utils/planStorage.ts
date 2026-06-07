@@ -12,6 +12,8 @@ import {
   BANK_LOAN_TENURE_MAX,
 } from "../constants";
 import type { FinancingType, FlatType, SchemeType } from "../types";
+import type { BtoScoreMode, BtoScorePreset } from "../types";
+import { BTO_SCORE_MODES, BTO_SCORE_PRESETS } from "./btoScoring";
 import { isDateInputValue } from "./date";
 import { clampNumber } from "./format";
 
@@ -34,6 +36,8 @@ export type PlannerSnapshot = {
   loanInterestRate: number;
   yearFilter: string;
   townQuery: string;
+  btoScoreMode: BtoScoreMode;
+  btoScorePreset: BtoScorePreset;
   selectedBtoProjectId: string | null;
   applicationMonth: string;
   completedMilestones: string[];
@@ -122,6 +126,16 @@ export function parsePlannerSnapshot(raw: string): PlannerSnapshot {
         ? parsed.yearFilter
         : "latest",
     townQuery: typeof parsed.townQuery === "string" ? parsed.townQuery : "",
+    btoScoreMode: parseEnumWithDefault(
+      parsed.btoScoreMode,
+      BTO_SCORE_MODES,
+      "buyer-fit"
+    ),
+    btoScorePreset: parseEnumWithDefault(
+      parsed.btoScorePreset,
+      BTO_SCORE_PRESETS,
+      "balanced"
+    ),
     selectedBtoProjectId:
       typeof parsed.selectedBtoProjectId === "string"
         ? parsed.selectedBtoProjectId
@@ -157,6 +171,16 @@ function parseEnum<T extends string>(
   }
 
   throw new Error(`Plan file has an unsupported ${label}.`);
+}
+
+function parseEnumWithDefault<T extends string>(
+  value: unknown,
+  validValues: readonly T[],
+  fallback: T
+): T {
+  return typeof value === "string" && validValues.includes(value as T)
+    ? (value as T)
+    : fallback;
 }
 
 function parseApplicationMonth(value: unknown) {

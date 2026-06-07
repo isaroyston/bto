@@ -5,6 +5,37 @@ export type ThemeMode = "light" | "dark";
 export type FinancingType = "hdb" | "bank" | "none";
 export type SchemeType = "normal" | "staggered" | "dia";
 export type FlatType = BtoFlatVariant["type"];
+export type BtoScoreMode = "buyer-fit" | "project-quality";
+export type BtoScorePreset = "balanced" | "budget" | "commute" | "faster-top";
+
+export type BtoScoreConfidence = "Strong data" | "Partial data" | "Limited data";
+
+export type BtoScoreComponentKey =
+  | "affordability"
+  | "commute"
+  | "centrality"
+  | "wait"
+  | "supply"
+  | "quality";
+
+export type BtoScoreComponent = {
+  key: BtoScoreComponentKey;
+  label: string;
+  score: number;
+  weight: number;
+  reason: string;
+};
+
+export type BtoDecisionScore = {
+  total: number | null;
+  mode: BtoScoreMode;
+  preset: BtoScorePreset;
+  label: string;
+  confidence: BtoScoreConfidence;
+  components: BtoScoreComponent[];
+  missingFields: string[];
+  reasons: string[];
+};
 
 export type TimelinePayment = {
   label: string;

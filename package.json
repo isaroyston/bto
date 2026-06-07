@@ -12,6 +12,7 @@
     "data:btohq": "node backend/scripts/backfill-btohq.mjs",
     "data:merge-bto": "node backend/scripts/merge-bto-datasets.mjs",
     "data:check-bto": "node backend/scripts/check-bto-data.mjs",
+    "test:scoring": "node backend/scripts/check-bto-scoring.mjs",
     "data:refresh": "npm run data:recordbto && npm run data:btohq && npm run data:rail-stations && npm run data:merge-bto"
   }
 }
