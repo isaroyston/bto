@@ -1,43 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="320" viewBox="0 0 1120 320" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="220" viewBox="0 0 1120 220" role="img" aria-labelledby="title desc">
   <title id="title">HDB Planner</title>
-  <desc id="desc">A dark GitHub banner for HDB Planner with a house mark and product tagline.</desc>
+  <desc id="desc">A clean retro block logo reading HDB Planner in yellow and orange on black.</desc>
   <defs>
-    <linearGradient id="mark" x1="124" x2="238" y1="82" y2="242" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#58d4c5"/>
-      <stop offset="1" stop-color="#1b5660"/>
-    </linearGradient>
-    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
-      <stop stop-color="#071114"/>
-      <stop offset=".58" stop-color="#10282e"/>
-      <stop offset="1" stop-color="#173f44"/>
+    <linearGradient id="gold" x1="0" x2="0" y1="24" y2="170" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd900"/>
+      <stop offset=".58" stop-color="#ffd000"/>
+      <stop offset=".59" stop-color="#d98a2a"/>
+      <stop offset="1" stop-color="#c77727"/>
     </linearGradient>
   </defs>
-  <rect width="1120" height="320" rx="34" fill="url(#bg)"/>
-  <circle cx="938" cy="44" r="194" fill="#58d4c5" opacity=".08"/>
-  <circle cx="92" cy="294" r="174" fill="#f1744e" opacity=".1"/>
-
-  <g transform="translate(118 68)">
-    <path d="M44 172V84L112 32l68 52v88h-48v-58H92v58z" fill="url(#mark)"/>
-    <path d="M20 91 112 21l92 70" fill="none" stroke="#dff8f4" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M50 177h154" stroke="#f1744e" stroke-width="14" stroke-linecap="round"/>
-    <circle cx="48" cy="28" r="18" fill="#f6c85f"/>
-    <path d="M147 82h33M147 110h33M57 112h31" stroke="#eafafa" stroke-width="9" stroke-linecap="round"/>
-  </g>
-
-  <g transform="translate(360 78)">
-    <text x="0" y="70" fill="#f7fbfb" font-family="'Arial Rounded MT Bold', 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif" font-size="72" font-weight="900">
-      HDB Planner
-    </text>
-    <text x="2" y="116" fill="#b9d1d5" font-family="'Plus Jakarta Sans', Inter, 'Segoe UI', system-ui, sans-serif" font-size="24" font-weight="700">
-      CPF grants, payment timing, and BTO comparisons in one local-first planner.
-    </text>
-    <g font-family="'Plus Jakarta Sans', Inter, 'Segoe UI', system-ui, sans-serif" font-size="16" font-weight="850">
-      <rect x="0" y="148" width="122" height="36" rx="18" fill="#dff8f4"/>
-      <text x="28" y="172" fill="#12363c">BTO radar</text>
-      <rect x="138" y="148" width="116" height="36" rx="18" fill="#fff0d7"/>
-      <text x="166" y="172" fill="#61380f">CPF math</text>
-      <rect x="270" y="148" width="148" height="36" rx="18" fill="#e4ecff"/>
-      <text x="298" y="172" fill="#243e78">policy-backed</text>
-    </g>
+  <rect width="1120" height="220" fill="#111111"/>
+  <g font-family="Impact, 'Arial Black', Haettenschweiler, 'Segoe UI Black', sans-serif" font-size="112" font-weight="900" letter-spacing="5">
+    <text x="560" y="150" text-anchor="middle" fill="none" stroke="#d48224" stroke-width="2.5" transform="translate(10 10)">HDB PLANNER</text>
+    <text x="560" y="150" text-anchor="middle" fill="none" stroke="#111111" stroke-width="7" transform="translate(5 5)">HDB PLANNER</text>
+    <text x="560" y="150" text-anchor="middle" fill="none" stroke="#d48224" stroke-width="2.5" transform="translate(4 4)">HDB PLANNER</text>
+    <text x="560" y="150" text-anchor="middle" fill="none" stroke="#111111" stroke-width="9">HDB PLANNER</text>
+    <text x="560" y="150" text-anchor="middle" fill="url(#gold)">HDB PLANNER</text>
   </g>
 </svg>

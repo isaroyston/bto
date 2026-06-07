@@ -1,5 +1,5 @@
 <p align="center">
-  <img src=".github/assets/logo.svg" alt="HDB Planner" width="640">
+  <img src=".github/assets/logo.svg" alt="HDB Planner" width="820">
 </p>
 
 <p align="center">
@@ -20,10 +20,6 @@
 - Builds an average payment timeline from application through key collection.
 - Compares flat-size-specific BTO projects from the generated RecordBTO backfill.
 - Saves scenarios in the browser with JSON import/export for tester handoff.
-
-## Screenshot
-
-![HDB Planner app screenshot](.github/assets/screenshot.svg)
 
 ## Structure
 
