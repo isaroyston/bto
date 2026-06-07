@@ -17,6 +17,12 @@
 - Compares flat-size-specific BTO projects from the generated RecordBTO backfill.
 - Saves scenarios in the browser with JSON import/export for tester handoff.
 
+## Product Surfaces
+
+- **Overview**: selected BTO, target flat price, policy basis, and milestone state.
+- **Plan**: assumptions, loan/downpayment math, money snapshot, and saved plan flow.
+- **BTO Radar**: launch filters, project cards, price record counts, and send-to-plan action.
+
 ## Structure
 
 - [`frontend`](frontend): Vite React app.
