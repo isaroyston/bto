@@ -11,9 +11,19 @@ import {
   LOAN_TENURE_MIN,
   BANK_LOAN_TENURE_MAX,
 } from "../constants";
-import type { FinancingType, FlatType, SchemeType } from "../types";
+import type {
+  BtoScoreComponentKey,
+  FinancingType,
+  FlatType,
+  SchemeType,
+} from "../types";
 import type { BtoScoreMode, BtoScorePreset } from "../types";
-import { BTO_SCORE_MODES, BTO_SCORE_PRESETS } from "./btoScoring";
+import {
+  BTO_SCORE_MODES,
+  BTO_SCORE_PRESETS,
+  BTO_SCORE_PRESET_DETAILS,
+  type BtoScoreWeights,
+} from "./btoScoring";
 import { isDateInputValue } from "./date";
 import { clampNumber } from "./format";
 
@@ -23,6 +33,13 @@ const PLANNER_SCHEMA_VERSION = 1;
 const FINANCING_VALUES = ["hdb", "bank", "none"] satisfies FinancingType[];
 const SCHEME_VALUES = ["normal", "staggered", "dia"] satisfies SchemeType[];
 const FLAT_TYPE_VALUES = FLAT_TYPE_OPTIONS.map((option) => option.value);
+const SCORE_WEIGHT_KEYS = [
+  "affordability",
+  "commute",
+  "centrality",
+  "wait",
+  "supply",
+] satisfies BtoScoreComponentKey[];
 
 export type PlannerSnapshot = {
   version: number;
@@ -38,6 +55,7 @@ export type PlannerSnapshot = {
   townQuery: string;
   btoScoreMode: BtoScoreMode;
   btoScorePreset: BtoScorePreset;
+  btoScoreWeights: BtoScoreWeights;
   selectedBtoProjectId: string | null;
   applicationMonth: string;
   completedMilestones: string[];
@@ -87,6 +105,11 @@ export function parsePlannerSnapshot(raw: string): PlannerSnapshot {
     "financing type"
   );
   const scheme = parseEnum(parsed.scheme, SCHEME_VALUES, "payment scheme");
+  const btoScorePreset = parseEnumWithDefault(
+    parsed.btoScorePreset,
+    BTO_SCORE_PRESETS,
+    "balanced"
+  );
 
   return {
     version: PLANNER_SCHEMA_VERSION,
@@ -131,10 +154,10 @@ export function parsePlannerSnapshot(raw: string): PlannerSnapshot {
       BTO_SCORE_MODES,
       "buyer-fit"
     ),
-    btoScorePreset: parseEnumWithDefault(
-      parsed.btoScorePreset,
-      BTO_SCORE_PRESETS,
-      "balanced"
+    btoScorePreset,
+    btoScoreWeights: parseScoreWeights(
+      parsed.btoScoreWeights,
+      BTO_SCORE_PRESET_DETAILS[btoScorePreset].weights
     ),
     selectedBtoProjectId:
       typeof parsed.selectedBtoProjectId === "string"
@@ -239,6 +262,24 @@ function parseDateMap(value: unknown) {
         isDateInputValue(entry[1])
     )
   );
+}
+
+function parseScoreWeights(value: unknown, fallback: BtoScoreWeights): BtoScoreWeights {
+  if (!isRecord(value)) return fallback;
+
+  const entries = SCORE_WEIGHT_KEYS.map((key) => {
+    const parsed = Number(value[key]);
+    return [key, parsed] as const;
+  });
+
+  if (entries.some(([, parsed]) => !Number.isFinite(parsed) || parsed < 0 || parsed > 100)) {
+    return fallback;
+  }
+
+  const total = entries.reduce((sum, [, parsed]) => sum + parsed, 0);
+  if (total !== 100) return fallback;
+
+  return Object.fromEntries(entries) as BtoScoreWeights;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

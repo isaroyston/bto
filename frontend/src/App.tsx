@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { BtoTab } from "./components/BtoTab";
 import { Navigation } from "./components/Navigation";
 import { OverviewTab } from "./components/OverviewTab";
@@ -27,7 +27,6 @@ import type {
   FlatType,
   SchemeType,
   TabKey,
-  ThemeMode,
 } from "./types";
 import {
   filterBtoProjects,
@@ -35,7 +34,11 @@ import {
   getAvailableYears,
   getEhgBand,
 } from "./utils/bto";
-import { scoreBtoProject } from "./utils/btoScoring";
+import {
+  BTO_SCORE_PRESET_DETAILS,
+  scoreBtoProject,
+  type BtoScoreWeights,
+} from "./utils/btoScoring";
 import { parseLaunchMonthInput } from "./utils/date";
 import { clampNumber } from "./utils/format";
 import { buildPaymentTimeline } from "./utils/paymentTimeline";
@@ -44,8 +47,6 @@ import {
   loadPlannerSnapshot,
   savePlannerSnapshot,
 } from "./utils/planStorage";
-
-const THEME_STORAGE_KEY = "hdb-planner:theme-mode";
 
 function App() {
   const [initialPlanResult] = useState(() => {
@@ -64,7 +65,6 @@ function App() {
   const initialPlan = initialPlanResult.snapshot;
 
   const [activeTab, setActiveTabState] = useState<TabKey>(getInitialTab());
-  const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialThemeMode);
   const [combinedIncome, setCombinedIncome] = useState(
     initialPlan?.combinedIncome ?? 6000
   );
@@ -88,11 +88,13 @@ function App() {
     initialPlan?.yearFilter ?? "latest"
   );
   const [townQuery, setTownQuery] = useState(initialPlan?.townQuery ?? "");
-  const [btoScoreMode, setBtoScoreMode] = useState<BtoScoreMode>(
-    initialPlan?.btoScoreMode ?? "buyer-fit"
-  );
+  const btoScoreMode: BtoScoreMode = "buyer-fit";
   const [btoScorePreset, setBtoScorePreset] = useState<BtoScorePreset>(
     initialPlan?.btoScorePreset ?? "balanced"
+  );
+  const [btoScoreWeights, setBtoScoreWeights] = useState<BtoScoreWeights>(
+    initialPlan?.btoScoreWeights ??
+      BTO_SCORE_PRESET_DETAILS[initialPlan?.btoScorePreset ?? "balanced"].weights
   );
   const [selectedBtoProjectId, setSelectedBtoProjectId] = useState<string | null>(
     initialPlan?.selectedBtoProjectId ?? null
@@ -129,6 +131,8 @@ function App() {
   const ehgGrant = ehgBand?.grantAmount ?? 0;
 
   const downpaymentRule = POLICY_CONFIG.downpaymentRules[financing][scheme];
+  const downpaymentTotal = downpaymentRule.signing + downpaymentRule.key;
+  const totalAffordability = Math.round((loanAmount + ehgGrant) / (1 - downpaymentTotal));
   const signingAmount = flatPrice * downpaymentRule.signing;
   const keyAmount = flatPrice * downpaymentRule.key;
   const minCashSigning = flatPrice * downpaymentRule.minCashSigning;
@@ -213,17 +217,22 @@ function App() {
         flatType,
         loanAmount,
         ehgGrant,
+        totalAffordability,
         cohortProjects,
       },
       "buyer-fit",
-      btoScorePreset
+      btoScorePreset,
+      btoScoreWeights
     );
-  }, [btoProjects, btoScorePreset, ehgGrant, flatType, loanAmount, selectedBtoProject]);
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = themeMode;
-    window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
-  }, [themeMode]);
+  }, [
+    btoProjects,
+    btoScorePreset,
+    btoScoreWeights,
+    ehgGrant,
+    flatType,
+    loanAmount,
+    selectedBtoProject,
+  ]);
 
   const setActiveTab = (tab: TabKey) => {
     setActiveTabState(tab);
@@ -248,6 +257,11 @@ function App() {
   const handleResetBtoFilters = () => {
     setYearFilter("latest");
     setTownQuery("");
+  };
+
+  const handleBtoScorePresetChange = (value: BtoScorePreset) => {
+    setBtoScorePreset(value);
+    setBtoScoreWeights(BTO_SCORE_PRESET_DETAILS[value].weights);
   };
 
   const handleRetryBto = () => {
@@ -321,6 +335,7 @@ function App() {
       townQuery,
       btoScoreMode,
       btoScorePreset,
+      btoScoreWeights,
       selectedBtoProjectId,
       applicationMonth,
       completedMilestones: activeCompletedMilestones,
@@ -366,24 +381,25 @@ function App() {
     <div className="app-shell min-h-screen bg-hdb-bg text-heritage-navy">
       <Navigation
         activeTab={activeTab}
-        themeMode={themeMode}
         onSelectTab={setActiveTab}
-        onThemeModeChange={setThemeMode}
       />
 
-      <main className="mx-auto w-full max-w-[1720px] min-w-0 space-y-8 overflow-x-hidden px-5 pb-14 pt-24 md:px-8 lg:px-10 xl:px-12">
+      <main className="min-w-0 overflow-x-hidden px-5 pb-14 pt-24 md:px-8 lg:ml-[280px] lg:px-8 lg:pt-8 xl:px-10">
+        <div className="mx-auto w-full max-w-[1720px] space-y-8">
         {activeTab === "overview" && (
           <OverviewTab
             combinedIncome={combinedIncome}
             loanAmount={loanAmount}
-            ehgBand={ehgBand}
             ehgGrant={ehgGrant}
+            totalAffordability={totalAffordability}
             selectedProject={selectedBtoProject}
             flatType={flatType}
             flatPrice={flatPrice}
             decisionScore={selectedDecisionScore}
             completedMilestoneCount={activeCompletedMilestones.length}
             totalMilestoneCount={timeline.length}
+            timeline={timeline}
+            completedMilestones={activeCompletedMilestones}
             onSelectTab={setActiveTab}
           />
         )}
@@ -394,6 +410,7 @@ function App() {
             combinedIncome={combinedIncome}
             loanAmount={loanAmount}
             ehgGrant={ehgGrant}
+            totalAffordability={totalAffordability}
             flatPrice={flatPrice}
             flatType={flatType}
             financing={financing}
@@ -403,6 +420,8 @@ function App() {
             signingAmount={signingAmount}
             keyAmount={keyAmount}
             minCashSigning={minCashSigning}
+            signingCpf={signingCpf}
+            keyCpf={keyCpf}
             optionFee={optionFee}
             surveyFee={surveyFee}
             fireInsurance={fireInsurance}
@@ -419,7 +438,6 @@ function App() {
             onSchemeChange={setScheme}
             onLoanTenureChange={handleLoanTenureChange}
             onLoanInterestRateChange={handleLoanInterestRateChange}
-            onOpenBtoRadar={() => setActiveTab("bto")}
             onSavePlan={handleSavePlan}
             onToggleMilestoneComplete={handleToggleMilestoneComplete}
             onMilestoneDateChange={handleMilestoneDateChange}
@@ -428,7 +446,6 @@ function App() {
 
         {activeTab === "bto" && (
           <BtoTab
-            btoProjects={btoProjects}
             btoLoading={btoLoading}
             btoError={btoError}
             availableYears={availableYears}
@@ -438,10 +455,11 @@ function App() {
             selectedFlatType={flatType}
             loanAmount={loanAmount}
             ehgGrant={ehgGrant}
-            scoreMode={btoScoreMode}
+            totalAffordability={totalAffordability}
             scorePreset={btoScorePreset}
-            onScoreModeChange={setBtoScoreMode}
-            onScorePresetChange={setBtoScorePreset}
+            scoreWeights={btoScoreWeights}
+            onScorePresetChange={handleBtoScorePresetChange}
+            onScoreWeightsChange={setBtoScoreWeights}
             onRetry={handleRetryBto}
             onYearFilterChange={handleYearFilterChange}
             onTownQueryChange={handleTownQueryChange}
@@ -451,6 +469,7 @@ function App() {
             onResetFilters={handleResetBtoFilters}
           />
         )}
+        </div>
       </main>
     </div>
   );
@@ -476,15 +495,6 @@ function getDefaultApplicationMonth() {
 function getInitialTab(): TabKey {
   const tab = new URLSearchParams(window.location.search).get("tab");
   return tab === "plan" || tab === "bto" || tab === "overview" ? tab : "overview";
-}
-
-function getInitialThemeMode(): ThemeMode {
-  const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
-  if (savedTheme === "light" || savedTheme === "dark") return savedTheme;
-
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
 }
 
 function getLoanTenureMax(financing: FinancingType) {

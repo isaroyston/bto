@@ -9,12 +9,13 @@ import type {
 } from "../types";
 import { getLaunchMonthSortValue } from "./date";
 
-type BtoScoreWeights = Record<BtoScoreComponentKey, number>;
+export type BtoScoreWeights = Record<BtoScoreComponentKey, number>;
 
 export type BtoScoreContext = {
   flatType: FlatType;
   loanAmount: number;
   ehgGrant: number;
+  totalAffordability: number;
   cohortProjects: BtoProject[];
 };
 
@@ -23,7 +24,6 @@ export const BTO_SCORE_MODE_OPTIONS: Array<{
   label: string;
 }> = [
   { value: "buyer-fit", label: "Buyer Fit" },
-  { value: "project-quality", label: "Project Quality" },
 ];
 
 export const BTO_SCORE_PRESET_OPTIONS: Array<{
@@ -34,6 +34,7 @@ export const BTO_SCORE_PRESET_OPTIONS: Array<{
   { value: "budget", label: "Budget" },
   { value: "commute", label: "Commute" },
   { value: "faster-top", label: "Faster TOP" },
+  { value: "custom", label: "Custom" },
 ];
 
 export const BTO_SCORE_MODES = BTO_SCORE_MODE_OPTIONS.map((option) => option.value);
@@ -52,23 +53,21 @@ export const BTO_SCORE_PRESET_DETAILS: Record<
     focus: "Good all-round shortlist for most buyers.",
     weights: {
       affordability: 30,
-      commute: 18,
-      centrality: 17,
+      commute: 20,
+      centrality: 20,
       wait: 15,
-      supply: 10,
-      quality: 10,
+      supply: 15,
     },
   },
   budget: {
     label: "Budget",
     focus: "Pushes lower price and loan + grant fit to the front.",
     weights: {
-      affordability: 50,
-      commute: 12,
-      centrality: 12,
+      affordability: 52,
+      commute: 14,
+      centrality: 14,
       wait: 10,
-      supply: 8,
-      quality: 8,
+      supply: 10,
     },
   },
   commute: {
@@ -76,23 +75,32 @@ export const BTO_SCORE_PRESET_DETAILS: Record<
     focus: "Prioritises MRT access and central station context before other tradeoffs.",
     weights: {
       affordability: 20,
-      commute: 35,
+      commute: 40,
       centrality: 25,
       wait: 8,
-      supply: 6,
-      quality: 6,
+      supply: 7,
     },
   },
   "faster-top": {
     label: "Faster TOP",
     focus: "Favours projects expected to complete sooner.",
     weights: {
-      affordability: 22,
-      commute: 13,
+      affordability: 25,
+      commute: 15,
       centrality: 10,
       wait: 40,
       supply: 10,
-      quality: 5,
+    },
+  },
+  custom: {
+    label: "Custom",
+    focus: "You have manually adjusted the score weights.",
+    weights: {
+      affordability: 20,
+      commute: 20,
+      centrality: 20,
+      wait: 20,
+      supply: 20,
     },
   },
 };
@@ -109,22 +117,22 @@ export const BTO_SCORE_COMPONENT_DETAILS: Record<
     label: "Affordability",
     shortLabel: "Budget",
     description:
-      "Buyer Fit checks selected flat price against loan + EHG estimate. Project Quality compares price and price per sqm within the launch.",
+      "Checks selected flat price against the loan + EHG estimate, then compares price and price per sqm within the launch.",
   },
   commute: {
-    label: "Commute",
+    label: "MRT Proximity",
     shortLabel: "MRT",
     description:
       "Uses distance to the nearest listed MRT. Shorter distance scores higher, separate from station centrality.",
   },
   centrality: {
-    label: "Centrality",
+    label: "Location Demand",
     shortLabel: "Place",
     description:
       "Uses generated station centrality and curated location context such as city fringe, regional centre, waterfront, or emerging estate.",
   },
   wait: {
-    label: "Wait",
+    label: "Wait Time",
     shortLabel: "TOP",
     description:
       "Uses expected TOP. Earlier completion scores higher within the selected launch.",
@@ -135,22 +143,17 @@ export const BTO_SCORE_COMPONENT_DETAILS: Record<
     description:
       "Uses total unit count as a simple supply signal. More units score higher within the launch.",
   },
-  quality: {
-    label: "Project quality",
-    shortLabel: "Ratings",
-    description:
-      "Uses BTOHQ accessibility, amenities, and affordability ratings when available.",
-  },
 };
 
 export function scoreBtoProject(
   project: BtoProject,
   context: BtoScoreContext,
   mode: BtoScoreMode,
-  preset: BtoScorePreset
+  preset: BtoScorePreset,
+  customWeights?: BtoScoreWeights
 ): BtoDecisionScore {
-  const weights = BTO_SCORE_PRESET_DETAILS[preset].weights;
-  const components = buildComponents(project, context, mode, weights);
+  const weights = customWeights ?? BTO_SCORE_PRESET_DETAILS[preset].weights;
+  const components = buildComponents(project, context, weights);
   const availableWeight = components.reduce((sum, component) => sum + component.weight, 0);
   const total =
     availableWeight > 0
@@ -161,14 +164,14 @@ export function scoreBtoProject(
           ) / availableWeight
         )
       : null;
-  const missingFields = getMissingFields(project, context, mode);
+  const missingFields = getMissingFields(project, context);
   const confidence = getConfidence(components.length);
 
   return {
     total,
     mode,
     preset,
-    label: mode === "buyer-fit" ? "Fit" : "Quality",
+    label: "Fit",
     confidence,
     components,
     missingFields,
@@ -180,7 +183,8 @@ export function scoreBtoProjects(
   projects: BtoProject[],
   context: Omit<BtoScoreContext, "cohortProjects">,
   mode: BtoScoreMode,
-  preset: BtoScorePreset
+  preset: BtoScorePreset,
+  customWeights?: BtoScoreWeights
 ) {
   const scoreContext = {
     ...context,
@@ -190,7 +194,7 @@ export function scoreBtoProjects(
   return new Map(
     projects.map((project) => [
       project.id,
-      scoreBtoProject(project, scoreContext, mode, preset),
+      scoreBtoProject(project, scoreContext, mode, preset, customWeights),
     ])
   );
 }
@@ -198,23 +202,20 @@ export function scoreBtoProjects(
 function buildComponents(
   project: BtoProject,
   context: BtoScoreContext,
-  mode: BtoScoreMode,
   weights: BtoScoreWeights
 ) {
   return [
-    buildAffordabilityComponent(project, context, mode, weights.affordability),
+    buildAffordabilityComponent(project, context, weights.affordability),
     buildCommuteComponent(project, context, weights.commute),
     buildCentralityComponent(project, weights.centrality),
     buildWaitComponent(project, context, weights.wait),
     buildSupplyComponent(project, context, weights.supply),
-    buildQualityComponent(project, weights.quality),
   ].filter((component): component is BtoScoreComponent => Boolean(component));
 }
 
 function buildAffordabilityComponent(
   project: BtoProject,
   context: BtoScoreContext,
-  mode: BtoScoreMode,
   weight: number
 ): BtoScoreComponent | null {
   const variant = project.flatVariants.find((candidate) => candidate.type === context.flatType);
@@ -239,17 +240,7 @@ function buildAffordabilityComponent(
             .filter((value): value is number => Number.isFinite(value))
         );
 
-  if (mode === "project-quality") {
-    return {
-      key: "affordability",
-      label: BTO_SCORE_COMPONENT_DETAILS.affordability.label,
-      score: Math.round(averageScores([priceScore, sqmScore])),
-      weight,
-      reason: "Lower price pressure",
-    };
-  }
-
-  const estimatedBudget = context.loanAmount + context.ehgGrant;
+  const estimatedBudget = context.totalAffordability;
   if (!Number.isFinite(estimatedBudget) || estimatedBudget <= 0) return null;
 
   const budgetRatio = variant.basePrice / estimatedBudget;
@@ -364,38 +355,13 @@ function buildSupplyComponent(
   };
 }
 
-function buildQualityComponent(project: BtoProject, weight: number): BtoScoreComponent | null {
-  const ratings = project.btohq?.ratings;
-  const ratingScores = [
-    ratings?.accessibility,
-    ratings?.amenities,
-    ratings?.affordability,
-  ]
-    .filter((rating): rating is number => Number.isFinite(rating))
-    .map((rating) => clamp((rating / 5) * 100, 0, 100));
-
-  if (!ratingScores.length) return null;
-
-  return {
-    key: "quality",
-    label: BTO_SCORE_COMPONENT_DETAILS.quality.label,
-    score: Math.round(averageScores(ratingScores)),
-    weight,
-    reason: "BTOHQ ratings available",
-  };
-}
-
-function getMissingFields(
-  project: BtoProject,
-  context: BtoScoreContext,
-  mode: BtoScoreMode
-) {
+function getMissingFields(project: BtoProject, context: BtoScoreContext) {
   const fields: string[] = [];
   const variant = project.flatVariants.find((candidate) => candidate.type === context.flatType);
 
   if (!variant) fields.push(`${context.flatType} price`);
-  if (mode === "buyer-fit" && context.loanAmount + context.ehgGrant <= 0) {
-    fields.push("loan + grant estimate");
+  if (context.totalAffordability <= 0) {
+    fields.push("affordability estimate");
   }
   if (!Number.isFinite(project.nearestMrtDistanceMeters)) fields.push("MRT distance");
   if (!Number.isFinite(project.locationSignals?.centralityScore)) {
@@ -403,7 +369,6 @@ function getMissingFields(
   }
   if (!project.expectedTop) fields.push("expected TOP");
   if (!Number.isFinite(project.totalUnits)) fields.push("unit count");
-  if (!project.btohq?.ratings) fields.push("BTOHQ ratings");
 
   return fields;
 }
@@ -473,8 +438,4 @@ function averageScores(values: Array<number | null>, weights?: number[]) {
     entries.reduce((sum, entry) => sum + entry.value * entry.weight, 0) /
     totalWeight
   );
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
 }

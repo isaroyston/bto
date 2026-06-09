@@ -1,12 +1,11 @@
 import type { BtoFlatVariant } from "./policies/policyConfig";
 
 export type TabKey = "overview" | "plan" | "bto";
-export type ThemeMode = "light" | "dark";
 export type FinancingType = "hdb" | "bank" | "none";
 export type SchemeType = "normal" | "staggered" | "dia";
 export type FlatType = BtoFlatVariant["type"];
-export type BtoScoreMode = "buyer-fit" | "project-quality";
-export type BtoScorePreset = "balanced" | "budget" | "commute" | "faster-top";
+export type BtoScoreMode = "buyer-fit";
+export type BtoScorePreset = "balanced" | "budget" | "commute" | "faster-top" | "custom";
 
 export type BtoScoreConfidence = "Strong data" | "Partial data" | "Limited data";
 
@@ -15,8 +14,7 @@ export type BtoScoreComponentKey =
   | "commute"
   | "centrality"
   | "wait"
-  | "supply"
-  | "quality";
+  | "supply";
 
 export type BtoScoreComponent = {
   key: BtoScoreComponentKey;

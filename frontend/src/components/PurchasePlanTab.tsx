@@ -1,6 +1,6 @@
+import { useMemo, useState, useEffect, useId, type ChangeEvent } from "react";
 import {
   BANK_LOAN_TENURE_MAX,
-  DEFAULT_LOAN_INTEREST_RATE,
   FLAT_MAX,
   FLAT_MIN,
   FLAT_TYPE_OPTIONS,
@@ -13,25 +13,23 @@ import {
 } from "../constants";
 import { POLICY_CONFIG } from "../policies/policyConfig";
 import type { BtoProject } from "../policies/policyConfig";
-import { NumberSliderField } from "./NumberSliderField";
-import type {
-  FinancingType,
-  FlatType,
-  SchemeType,
-  TimelineItem,
-} from "../types";
+import type { FinancingType, FlatType, SchemeType, TimelineItem } from "../types";
 import { formatDateInputDisplay } from "../utils/date";
 import { currency } from "../utils/format";
 import {
-  getBtoProjectSourceLabel,
-  getBtoProjectSourceNote,
-} from "../utils/sourceCredits";
+  Card,
+  Icon,
+  MetricRow,
+  PageHeader,
+  Pill,
+} from "./DashboardUi";
 
 type PurchasePlanTabProps = {
   selectedProject: BtoProject | null;
   combinedIncome: number;
   loanAmount: number;
   ehgGrant: number;
+  totalAffordability: number;
   flatPrice: number;
   flatType: FlatType;
   financing: FinancingType;
@@ -41,6 +39,8 @@ type PurchasePlanTabProps = {
   signingAmount: number;
   keyAmount: number;
   minCashSigning: number;
+  signingCpf: number;
+  keyCpf: number;
   optionFee: number;
   surveyFee: number;
   fireInsurance: number;
@@ -57,7 +57,6 @@ type PurchasePlanTabProps = {
   onSchemeChange: (value: SchemeType) => void;
   onLoanTenureChange: (value: number) => void;
   onLoanInterestRateChange: (value: number) => void;
-  onOpenBtoRadar: () => void;
   onSavePlan: () => void;
   onToggleMilestoneComplete: (label: string) => void;
   onMilestoneDateChange: (label: string, value: string) => void;
@@ -80,6 +79,7 @@ export function PurchasePlanTab({
   combinedIncome,
   loanAmount,
   ehgGrant,
+  totalAffordability,
   flatPrice,
   flatType,
   financing,
@@ -89,6 +89,8 @@ export function PurchasePlanTab({
   signingAmount,
   keyAmount,
   minCashSigning,
+  signingCpf,
+  keyCpf,
   optionFee,
   surveyFee,
   fireInsurance,
@@ -105,7 +107,6 @@ export function PurchasePlanTab({
   onSchemeChange,
   onLoanTenureChange,
   onLoanInterestRateChange,
-  onOpenBtoRadar,
   onSavePlan,
   onToggleMilestoneComplete,
   onMilestoneDateChange,
@@ -117,385 +118,814 @@ export function PurchasePlanTab({
     fireInsurance +
     POLICY_CONFIG.fees.registrationFeeLeaseEscrow;
   const downpaymentTotal = signingAmount + keyAmount;
-  const totalPlannedCosts = downpaymentTotal + immediateCostsTotal;
-
-  return (
-    <section className="space-y-8">
-      <header className="space-y-3">
-        <h2 className="text-2xl font-semibold text-heritage-navy">
-          Purchase plan
-        </h2>
-        <p className="max-w-2xl text-sm leading-6 text-warm-stone">
-          Tune the assumptions, then track what is due and when.
-        </p>
-      </header>
-
-      <div className="space-y-5">
-        <ScenarioLedger
-          selectedProject={selectedProject}
-          combinedIncome={combinedIncome}
-          loanAmount={loanAmount}
-          ehgGrant={ehgGrant}
-          flatPrice={flatPrice}
-          flatType={flatType}
-          financing={financing}
-          scheme={scheme}
-          loanTenureYears={loanTenureYears}
-          loanInterestRate={loanInterestRate}
-          signingAmount={signingAmount}
-          keyAmount={keyAmount}
-          minCashSigning={minCashSigning}
-          immediateCostsTotal={immediateCostsTotal}
-          downpaymentTotal={downpaymentTotal}
-          totalPlannedCosts={totalPlannedCosts}
-          downpaymentNote={downpaymentNote}
-          planStorageStatus={planStorageStatus}
-          planStorageError={planStorageError}
-          onIncomeChange={onIncomeChange}
-          onFlatPriceChange={onFlatPriceChange}
-          onFlatTypeChange={onFlatTypeChange}
-          onFinancingChange={onFinancingChange}
-          onSchemeChange={onSchemeChange}
-          onLoanTenureChange={onLoanTenureChange}
-          onLoanInterestRateChange={onLoanInterestRateChange}
-          onOpenBtoRadar={onOpenBtoRadar}
-          onSavePlan={onSavePlan}
-        />
-
-        <TimelineBoard
-          timeline={timeline}
-          selectedProject={selectedProject}
-          completedMilestones={completedMilestones}
-          confirmedMilestoneDates={confirmedMilestoneDates}
-          onToggleMilestoneComplete={onToggleMilestoneComplete}
-          onMilestoneDateChange={onMilestoneDateChange}
-        />
-      </div>
-    </section>
-  );
-}
-
-function ScenarioLedger({
-  selectedProject,
-  combinedIncome,
-  loanAmount,
-  ehgGrant,
-  flatPrice,
-  flatType,
-  financing,
-  scheme,
-  loanTenureYears,
-  loanInterestRate,
-  signingAmount,
-  keyAmount,
-  minCashSigning,
-  immediateCostsTotal,
-  downpaymentTotal,
-  totalPlannedCosts,
-  downpaymentNote,
-  planStorageStatus,
-  planStorageError,
-  onIncomeChange,
-  onFlatPriceChange,
-  onFlatTypeChange,
-  onFinancingChange,
-  onSchemeChange,
-  onLoanTenureChange,
-  onLoanInterestRateChange,
-  onOpenBtoRadar,
-  onSavePlan,
-}: {
-  selectedProject: BtoProject | null;
-  combinedIncome: number;
-  loanAmount: number;
-  ehgGrant: number;
-  flatPrice: number;
-  flatType: FlatType;
-  financing: FinancingType;
-  scheme: SchemeType;
-  loanTenureYears: number;
-  loanInterestRate: number;
-  signingAmount: number;
-  keyAmount: number;
-  minCashSigning: number;
-  immediateCostsTotal: number;
-  downpaymentTotal: number;
-  totalPlannedCosts: number;
-  downpaymentNote: string;
-  planStorageStatus: string;
-  planStorageError: string | null;
-  onIncomeChange: (value: number) => void;
-  onFlatPriceChange: (value: number) => void;
-  onFlatTypeChange: (value: FlatType) => void;
-  onFinancingChange: (value: FinancingType) => void;
-  onSchemeChange: (value: SchemeType) => void;
-  onLoanTenureChange: (value: number) => void;
-  onLoanInterestRateChange: (value: number) => void;
-  onOpenBtoRadar: () => void;
-  onSavePlan: () => void;
-}) {
-  const loanTenureMax = getLoanTenureMax(financing);
-  const balanceAfterUpfront = Math.max(
-    flatPrice - downpaymentTotal - ehgGrant,
-    0
-  );
+  const estimatedTotalPrice = flatPrice;
+  const balanceAfterUpfront = Math.max(flatPrice - downpaymentTotal - ehgGrant, 0);
   const loanPrincipalNeeded = financing === "none" ? 0 : balanceAfterUpfront;
   const monthlyPayment = calculateMonthlyPayment(
     loanPrincipalNeeded,
     loanInterestRate,
     loanTenureYears
   );
-  const loanEstimateCoverage = Math.min(
-    100,
-    Math.round(
-      (Math.min(loanAmount, loanPrincipalNeeded) /
-        Math.max(loanPrincipalNeeded, 1)) *
-        100
-    )
-  );
-  const loanEstimateShortfall = Math.max(loanPrincipalNeeded - loanAmount, 0);
-  const financingLabel = getFinancingLabel(financing);
-  const monthlyPaymentDetail =
-    financing === "none"
-      ? "No monthly loan instalment because no loan is selected."
-      : `${loanTenureYears} years at ${formatRate(loanInterestRate)}% p.a.`;
+  const cpfTotal = signingCpf + keyCpf;
+  const cashTotal = minCashSigning + immediateCostsTotal;
+  const fundingTotal = Math.max(loanPrincipalNeeded + cpfTotal + cashTotal + ehgGrant, 1);
+  const hdbLoanShare = Math.min(100, Math.round((loanPrincipalNeeded / fundingTotal) * 100));
+  const cpfShare = Math.min(100, Math.round((cpfTotal / fundingTotal) * 100));
+  const cashShare = Math.min(100, Math.round((cashTotal / fundingTotal) * 100));
+  const grantShare = Math.max(0, 100 - hdbLoanShare - cpfShare - cashShare);
+  const [showAffordTip, setShowAffordTip] = useState(false);
+  const affordTipId = useId();
+  const [paymentOverrides, setPaymentOverrides] = useState<Record<string, { total: number; cpf: number; cash: number }>>({});
+
+  const effectiveTimeline = useMemo(() => {
+    return timeline.map((item) => {
+      if (!item.payment) return item;
+      const override = paymentOverrides[item.label];
+      if (!override) return item;
+      return {
+        ...item,
+        payment: {
+          ...item.payment,
+          total: override.total,
+          cpfOa: override.cpf,
+          cash: override.cash,
+        },
+      };
+    });
+  }, [timeline, paymentOverrides]);
+
+  const handleTogglePaymentFunding = (label: string, type: 'cpf' | 'cash') => {
+    const item = effectiveTimeline.find((t) => t.label === label);
+    if (!item?.payment) return;
+    const { total, cpfOa, cash } = item.payment;
+    // Only allow toggling for milestones that have both funding sources (or are downpayments)
+    const isDownpayment = total >= 10000;
+    if (!isDownpayment) return;
+
+    setPaymentOverrides((prev) => {
+      const current = prev[label] ?? { total, cpf: cpfOa, cash };
+      if (type === 'cpf') {
+        // Toggle CPF: if CPF > 0, move all to cash; if CPF is 0, move all back to CPF
+        const newCpf = current.cpf > 0 ? 0 : current.total;
+        const newCash = current.total - newCpf;
+        return { ...prev, [label]: { ...current, cpf: newCpf, cash: newCash } };
+      } else {
+        // Toggle Cash: if Cash > 0, move all to CPF; if Cash is 0, move all back to Cash
+        const newCash = current.cash > 0 ? 0 : current.total;
+        const newCpf = current.total - newCash;
+        return { ...prev, [label]: { ...current, cpf: newCpf, cash: newCash } };
+      }
+    });
+  };
+
+  const handlePaymentTotalChange = (label: string, newTotal: number) => {
+    const item = effectiveTimeline.find((t) => t.label === label);
+    if (!item?.payment) return;
+    const { cpfOa, cash } = item.payment;
+    const currentTotal = cpfOa + cash;
+    if (currentTotal === 0) return;
+    // Maintain the same ratio
+    const cpfRatio = cpfOa / currentTotal;
+    const cashRatio = cash / currentTotal;
+    setPaymentOverrides((prev) => {
+      return {
+        ...prev,
+        [label]: {
+          total: newTotal,
+          cpf: Math.round(newTotal * cpfRatio),
+          cash: Math.round(newTotal * cashRatio),
+        },
+      };
+    });
+  };
 
   return (
-    <div className="panel scenario-ledger">
-      <div className="scenario-ledger-head">
-        <div>
-          <p className="scenario-eyebrow">Plan anchor</p>
-          <h3 className="mt-1 text-xl font-semibold text-heritage-navy">
-            {selectedProject?.name ?? "No project selected"}
-          </h3>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-warm-stone">
-            {selectedProject
-              ? `${selectedProject.location}, ${selectedProject.launchMonth}`
-              : "Choose a BTO project to anchor price, TOP, and timing."}
-          </p>
+    <section className="dashboard-page">
+      <PageHeader
+        title="Plan"
+        subtitle="Build and adjust your financial plan for a confident home journey."
+        action={
+          <div className="plan-actions">
+            <button type="button" className="btn-primary" onClick={onSavePlan}>
+              Save Plan
+            </button>
+            <span className={planStorageError ? "form-error" : ""}>
+              <Icon name="calendar" />
+              {planStorageError ? planStorageError : planStorageStatus}
+            </span>
+          </div>
+        }
+      />
+
+      <div className="plan-layout">
+        <div className="plan-main">
           {selectedProject && (
-            <p className="mt-2 text-xs leading-5 text-warm-stone">
-              {getBtoProjectSourceNote(selectedProject)}
-            </p>
+            <Card className="plan-section-card plan-project-card">
+              <div className="plan-project-header">
+                <div>
+                  <h3>{selectedProject.name}</h3>
+                  <div className="plan-project-meta">
+                    <span className="plan-project-tag">{selectedProject.location}</span>
+                    {selectedProject.btoType && (
+                      <span className={`plan-project-badge plan-project-badge-${selectedProject.btoType.toLowerCase()}`}>
+                        {selectedProject.btoType.charAt(0).toUpperCase() + selectedProject.btoType.slice(1)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {selectedProject.sourceUrl && (
+                  <a
+                    href={selectedProject.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="plan-project-link"
+                  >
+                    View Details <Icon name="external" />
+                  </a>
+                )}
+              </div>
+              <div className="plan-project-kpis">
+                <span className="plan-project-kpi">
+                  <Icon name="home" />
+                  <strong>
+                    {selectedProject.flatVariants.find((v) => v.type === flatType)
+                      ? currency(selectedProject.flatVariants.find((v) => v.type === flatType)!.basePrice)
+                      : "No price"}
+                  </strong>
+                  <span className="plan-project-kpi-sublabel">est.</span>
+                  <span>{flatType}</span>
+                </span>
+                <span className="plan-project-kpi-divider" />
+                <span className="plan-project-kpi">
+                  <Icon name="calendar" />
+                  <strong>{selectedProject.expectedTop ?? "—"}</strong>
+                  <span>TOP</span>
+                </span>
+                <span className="plan-project-kpi-divider" />
+                <span className="plan-project-kpi">
+                  <Icon name="metro" />
+                  <strong>
+                    {selectedProject.nearestMrtDistanceMeters
+                      ? `${(selectedProject.nearestMrtDistanceMeters / 1000).toFixed(1)} km`
+                      : "—"}
+                  </strong>
+                  <span>{selectedProject.nearestMrt ?? "MRT"}</span>
+                </span>
+                <span className="plan-project-kpi-divider" />
+                <span className="plan-project-kpi">
+                  <Icon name="building" />
+                  <strong>{selectedProject.totalUnits?.toLocaleString("en-SG") ?? "—"}</strong>
+                  <span>Units</span>
+                </span>
+              </div>
+              <p className="plan-project-footer">
+                <Icon name="info" />
+                {selectedProject.flatVariants.length > 0
+                  ? `Available: ${selectedProject.flatVariants.map((v) => v.type).join(", ")}`
+                  : "Flat types not listed"}
+              </p>
+            </Card>
           )}
-        </div>
-        <div className="scenario-ledger-actions">
-          {selectedProject?.sourceUrl && (
-            <a
-              href={selectedProject.sourceUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="btn-secondary"
-            >
-              Source: {getBtoProjectSourceLabel(selectedProject)}
-            </a>
-          )}
-          <button type="button" className="btn-primary" onClick={onOpenBtoRadar}>
-            {selectedProject ? "Change project" : "Choose project"}
-          </button>
-        </div>
-      </div>
 
-      <div className="scenario-ledger-body">
-        <section className="scenario-price-section" aria-labelledby="scenario-price-title">
-          <div>
-            <p id="scenario-price-title" className="scenario-section-label">
-              Target flat price
-            </p>
-            <p className="scenario-price">{currency(flatPrice)}</p>
-          </div>
-
-          <NumberSliderField
-            id="flat-price"
-            label="Adjust target price"
-            min={FLAT_MIN}
-            max={FLAT_MAX}
-            step={5000}
-            value={flatPrice}
-            onChange={onFlatPriceChange}
-            minLabel={currency(FLAT_MIN)}
-            maxLabel={currency(FLAT_MAX)}
-          />
-
-          <div className="scenario-fact-grid">
-            <ScenarioFact label="Flat" value={flatType} />
-            <ScenarioFact
-              label="Expected TOP"
-              value={selectedProject?.expectedTop ?? "Not listed"}
+          <Card className="plan-section-card">
+            <PlanStepHeader
+              step={1}
+              title="Assumptions"
+              description="These inputs help us customise your plan and estimates."
             />
-            <ScenarioFact
-              label="Units"
-              value={selectedProject?.totalUnits?.toLocaleString("en-SG") ?? "Not listed"}
-            />
-            <ScenarioFact
-              label="Nearest MRT"
-              value={selectedProject?.nearestMrt ?? "Not listed"}
-            />
-          </div>
-        </section>
-
-        <section className="scenario-assumptions-section" aria-label="Scenario assumptions">
-          <div>
-            <p className="scenario-section-label">Assumptions</p>
-            <p className="mt-1 text-sm leading-6 text-warm-stone">
-              Change a choice, the numbers update.
-            </p>
-          </div>
-
-          <div className="scenario-control-grid">
-            <div className="scenario-income-control">
-              <NumberSliderField
-                id="plan-income"
-                label="Monthly household income"
-                helperText="Drives loan and EHG estimates."
+            <div className="assumption-grid primary-assumption-grid">
+              <MoneyInput
+                label="Monthly Household Income"
+                value={combinedIncome}
                 min={INCOME_MIN}
                 max={INCOME_MAX}
-                step={100}
-                value={combinedIncome}
                 onChange={onIncomeChange}
-                minLabel={currency(INCOME_MIN)}
-                maxLabel={currency(INCOME_MAX)}
               />
-            </div>
-
-            <div className="scenario-choice-grid">
-              <ScenarioSegmentedControl
+              <SelectField
                 label="Flat"
                 value={flatType}
-                options={FLAT_TYPE_OPTIONS}
                 onChange={(value) => onFlatTypeChange(value as FlatType)}
+                options={FLAT_TYPE_OPTIONS}
+                className="segmented-field-flat"
               />
-              <ScenarioSegmentedControl
+              <SegmentedField
                 label="Financing"
                 value={financing}
-                options={FINANCING_OPTIONS}
                 onChange={(value) => onFinancingChange(value as FinancingType)}
+                options={FINANCING_OPTIONS}
+                className="segmented-field-financing"
               />
-              <ScenarioSegmentedControl
+              <SegmentedField
                 label="Payment"
                 value={scheme}
-                options={SCHEME_OPTIONS}
                 onChange={(value) => onSchemeChange(value as SchemeType)}
+                options={SCHEME_OPTIONS}
+                className="segmented-field-payment"
               />
             </div>
-
-            <div className="scenario-loan-controls">
-              <NumberSliderField
-                id="loan-tenure"
-                label="Loan tenure"
-                helperText={`${financingLabel} max: ${loanTenureMax} years.`}
-                min={LOAN_TENURE_MIN}
-                max={loanTenureMax}
-                step={1}
-                value={loanTenureYears}
-                onChange={onLoanTenureChange}
-                minLabel="1 year"
-                maxLabel={`${loanTenureMax} years`}
-              />
-              <InterestRateField
-                value={loanInterestRate}
-                onChange={onLoanInterestRateChange}
-                financing={financing}
-              />
-            </div>
-          </div>
-
-          <p className="scenario-note">{downpaymentNote}</p>
-        </section>
-
-        <section className="scenario-money-section" aria-label="Money snapshot">
-          <div className="scenario-money-head">
-            <div>
-              <p className="scenario-section-label">Money snapshot</p>
-              <p className="mt-1 text-sm text-warm-stone">Before the loan balance.</p>
-            </div>
-            <div className="scenario-money-total">
-              <p className="scenario-snapshot-total">{currency(totalPlannedCosts)}</p>
-              <p className="text-xs text-warm-stone">Before loan balance</p>
-            </div>
-          </div>
-
-          <div className="scenario-price-bridge">
-            <span>Target price</span>
-            <strong>{currency(flatPrice)}</strong>
-            <em>
-              Scheduled cash/CPF first, then the remaining loan.
-            </em>
-          </div>
-
-          <div className="scenario-loan-needed-card">
-            <div>
-              <span>Loan amount needed</span>
-              <strong>{currency(loanPrincipalNeeded)}</strong>
-              <em>
-                {financing === "none"
-                  ? `${currency(balanceAfterUpfront)} still needs to be covered without a loan.`
-                  : "Target price minus downpayment and EHG grant. Fees are separate."}
-              </em>
-            </div>
-            <div className="scenario-repayment-card">
-              <span>Estimated monthly payment</span>
-              <strong>{currency(monthlyPayment)}</strong>
-              <em>{monthlyPaymentDetail}</em>
-            </div>
-          </div>
-
-          <div className="scenario-loan-meter">
-            <div className="flex items-center justify-between gap-3 text-xs">
-              <span className="font-medium text-heritage-navy">
-                Income-based loan estimate
-              </span>
-              <span className="money-value font-semibold text-heritage-navy">
-                {currency(loanAmount)}
-              </span>
-            </div>
-            <div className="scenario-meter-track" aria-hidden="true">
-              <span
-                className="scenario-meter-fill"
-                style={{ width: `${loanEstimateCoverage}%` }}
-              />
-            </div>
-            <p className="text-xs text-warm-stone">
-              {financing === "none"
-                ? "Switch to HDB or bank financing to compare against loan need."
-                : loanEstimateShortfall > 0
-                  ? `${currency(loanEstimateShortfall)} more than this estimate may be needed.`
-                  : "This estimate covers the loan amount needed in this scenario."}
+            <details className="assumption-more">
+              <summary>Show more assumptions</summary>
+              <div className="assumption-grid assumption-grid-small">
+                <NumberInput
+                  label="Loan tenure"
+                  value={loanTenureYears}
+                  min={LOAN_TENURE_MIN}
+                  max={getLoanTenureMax(financing)}
+                  suffix="years"
+                  onChange={onLoanTenureChange}
+                />
+                <NumberInput
+                  label="Interest rate"
+                  value={loanInterestRate}
+                  min={LOAN_INTEREST_RATE_MIN}
+                  max={LOAN_INTEREST_RATE_MAX}
+                  step={0.05}
+                  suffix="% p.a."
+                  onChange={onLoanInterestRateChange}
+                />
+                <MetricRow
+                  icon="building"
+                  label="Project"
+                  value={selectedProject?.name ?? "No project selected"}
+                  detail={selectedProject?.location}
+                />
+              </div>
+            </details>
+            <p className="policy-note">
+              {downpaymentNote} CPF OA usage is applied automatically where eligible.
             </p>
-          </div>
+          </Card>
 
-          <div className="scenario-ledger-rows">
-            <CostRow label="Required downpayment" value={currency(downpaymentTotal)} />
-            <CostRow label="Signing" value={currency(signingAmount)} />
-            <CostRow label="Key collection" value={currency(keyAmount)} />
-            <CostRow label="Minimum cash at signing" value={currency(minCashSigning)} />
-            <CostRow label="EHG grant estimate" value={currency(ehgGrant)} />
-            <CostRow label="Loan amount needed" value={currency(loanPrincipalNeeded)} />
-            <CostRow label="Monthly payment estimate" value={currency(monthlyPayment)} />
-            <CostRow label="Immediate fees" value={currency(immediateCostsTotal)} />
-          </div>
+          <Card className="plan-section-card">
+            <PlanStepHeader
+              step={2}
+              title="Target Flat Price"
+              description="Set your own target price. BTO prices shown elsewhere are estimates based on past launches."
+            />
+            <div className="target-price-grid">
+              <div>
+                <MoneyInput
+                  label="Target Flat Price (your estimate)"
+                  value={flatPrice}
+                  min={FLAT_MIN}
+                  max={FLAT_MAX}
+                  onChange={onFlatPriceChange}
+                />
+                <p className={`inline-help ${selectedProject && flatPrice > totalAffordability ? "inline-help-warn" : ""}`}>
+                  {selectedProject ? <Icon name="check" /> : <Icon name="building" />}
+                  {selectedProject
+                    ? flatPrice <= totalAffordability
+                      ? "Target price is within your estimated affordability"
+                      : "Target price exceeds your estimated affordability"
+                    : "Choose a BTO project to compare against a launch price range"}
+                </p>
+              </div>
+              <div className="affordability-callout">
+                <div>
+                  <p>
+                    Based on your inputs, your estimated total affordability is
+                    <span
+                      className="bto-breakdown-info"
+                      onMouseEnter={() => setShowAffordTip(true)}
+                      onMouseLeave={() => setShowAffordTip(false)}
+                      onFocus={() => setShowAffordTip(true)}
+                      onBlur={() => setShowAffordTip(false)}
+                      aria-describedby={affordTipId}
+                      tabIndex={0}
+                    >
+                      <Icon name="info" />
+                      {showAffordTip && (
+                        <span id={affordTipId} className="bto-tooltip" role="tooltip">
+                          Total affordability = (Loan + Grant) / (1 - Downpayment). Assumes downpayment is covered by CPF/cash savings.
+                        </span>
+                      )}
+                    </span>
+                  </p>
+                  <strong>{currency(totalAffordability)}</strong>
+                  <span className="affordability-note">Loan + grant: {currency(loanAmount + ehgGrant)}</span>
+                  {selectedProject && (
+                    (selectedProject.flatVariants.find((v) => v.type === flatType)?.basePrice ?? 0) > totalAffordability
+                  ) && (
+                    <span className="affordability-warning">
+                      <Icon name="alert" />
+                      Selected project exceeds your affordability
+                    </span>
+                  )}
+                </div>
+                <div className="affordability-illustration" aria-hidden="true">
+                  <svg viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    {/* Left building */}
+                    <rect x="12" y="48" width="42" height="62" rx="2" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5" />
+                    <rect x="18" y="56" width="10" height="10" rx="1" fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="1" />
+                    <rect x="34" y="56" width="10" height="10" rx="1" fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="1" />
+                    <rect x="18" y="72" width="10" height="10" rx="1" fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="1" />
+                    <rect x="34" y="72" width="10" height="10" rx="1" fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="1" />
+                    {/* Main house */}
+                    <rect x="58" y="28" width="80" height="82" rx="2" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5" />
+                    {/* Roof */}
+                    <path d="M55 28 L98 4 L141 28 Z" fill="#f1f5f9" stroke="#94a3b8" strokeWidth="2" strokeLinejoin="round" />
+                    {/* Top windows */}
+                    <rect x="68" y="38" width="14" height="14" rx="1" fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="1" />
+                    <rect x="92" y="38" width="14" height="14" rx="1" fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="1" />
+                    <rect x="116" y="38" width="14" height="14" rx="1" fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="1" />
+                    {/* Bottom left window */}
+                    <rect x="68" y="62" width="14" height="14" rx="1" fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="1" />
+                    {/* Door/Garage */}
+                    <rect x="90" y="58" width="28" height="52" rx="1" fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="1" />
+                    <line x1="104" y1="58" x2="104" y2="110" stroke="#cbd5e1" strokeWidth="1" />
+                    <line x1="90" y1="72" x2="118" y2="72" stroke="#cbd5e1" strokeWidth="1" />
+                    <line x1="90" y1="86" x2="118" y2="86" stroke="#cbd5e1" strokeWidth="1" />
+                    <line x1="90" y1="100" x2="118" y2="100" stroke="#cbd5e1" strokeWidth="1" />
+                    {/* Bushes */}
+                    <circle cx="20" cy="112" r="8" fill="#bbf7d0" />
+                    <circle cx="40" cy="115" r="10" fill="#86efac" />
+                    <circle cx="70" cy="113" r="7" fill="#bbf7d0" />
+                    <circle cx="135" cy="114" r="9" fill="#bbf7d0" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </Card>
 
-          <div className="scenario-fee-row">
-            <span>Fees: application, option, survey, insurance, registration.</span>
-            <span className="money-value">{currency(immediateCostsTotal)}</span>
-          </div>
-        </section>
-      </div>
-
-      <div className="scenario-save-strip">
-        <div>
-          <p className="text-sm font-semibold text-heritage-navy">Saved plan</p>
-          <p className="mt-1 text-sm text-warm-stone">{planStorageStatus}</p>
-          {planStorageError && (
-            <p className="mt-1 text-sm font-medium text-red-700">{planStorageError}</p>
-          )}
+          <Card className="plan-section-card">
+            <PlanStepHeader
+              step={3}
+              title="Milestones & Payments"
+              description="Review the key milestones, estimated amounts and select your expected dates."
+            />
+            <div className="milestone-table-wrap">
+              <table className="milestone-table">
+                <thead>
+                  <tr>
+                    <th>Milestone</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Your Expected Date</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {effectiveTimeline.map((item, index) => (
+                    <MilestoneRow
+                      key={item.label}
+                      item={item}
+                      index={index}
+                      confirmedDate={confirmedMilestoneDates[item.label]}
+                      isComplete={completedMilestones.includes(item.label)}
+                      onToggleComplete={onToggleMilestoneComplete}
+                      onMilestoneDateChange={onMilestoneDateChange}
+                      onTogglePaymentFunding={handleTogglePaymentFunding}
+                      onPaymentTotalChange={handlePaymentTotalChange}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="milestone-footer">
+              <span>Dates are estimates only. Click any amount to edit it to your actual figure.</span>
+            </div>
+          </Card>
         </div>
-        <div className="scenario-save-actions">
-          <button type="button" className="btn-primary" onClick={onSavePlan}>
-            Save plan
+
+        <aside className="plan-side">
+          <Card className="summary-card">
+            <div className="summary-head">
+              <h2>Plan Summary</h2>
+              <Pill tone="green">On Track</Pill>
+            </div>
+            <div className="summary-price">
+              <span>Target Flat Price</span>
+              <strong>{currency(flatPrice)}</strong>
+            </div>
+            <SummaryLine label="Estimated Total Price" value={currency(estimatedTotalPrice)} />
+            <SummaryLine
+              label="Estimated Monthly Payment"
+              value={currency(monthlyPayment)}
+              tooltip="Monthly Payment = Loan Principal × [Monthly Rate × (1 + Monthly Rate)^Months] / [(1 + Monthly Rate)^Months − 1]"
+            />
+            <FundingBreakdown
+              hdbLoan={loanPrincipalNeeded}
+              hdbLoanShare={hdbLoanShare}
+              cpf={cpfTotal}
+              cpfShare={cpfShare}
+              cash={cashTotal}
+              cashShare={cashShare}
+              ehgGrant={ehgGrant}
+              grantShare={grantShare}
+            />
+          </Card>
+
+          <Card title="Key Dates" icon="calendar">
+            <div className="key-date-list">
+              {timeline.slice(0, 4).map((item) => (
+                <div key={item.label}>
+                  <span>
+                    <Icon name="calendar" />
+                    {item.label}
+                  </span>
+                  <strong>
+                    {confirmedMilestoneDates[item.label]
+                      ? formatDateInputDisplay(confirmedMilestoneDates[item.label])
+                      : item.date}
+                  </strong>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+
+        </aside>
+      </div>
+    </section>
+  );
+}
+
+function MoneyInput({
+  label,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (value: number) => void;
+}) {
+  const [text, setText] = useState(String(value));
+
+  useEffect(() => {
+    setText(String(value));
+  }, [value]);
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    if (raw === "" || /^\d+$/.test(raw)) {
+      setText(raw);
+    }
+  };
+
+  const handleBlur = () => {
+    if (text === "") {
+      onChange(min);
+      return;
+    }
+    const num = Number(text);
+    if (Number.isNaN(num)) {
+      onChange(min);
+    } else if (num < min) {
+      onChange(min);
+    } else if (num > max) {
+      onChange(max);
+    } else {
+      onChange(num);
+    }
+  };
+
+  return (
+    <label className="input-field">
+      <span>{label}</span>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={text}
+        onChange={handleChange}
+        onBlur={handleBlur}
+      />
+    </label>
+  );
+}
+
+function NumberInput({
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  suffix,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  suffix: string;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <label className="input-field">
+      <span>{label}</span>
+      <div className="number-with-suffix">
+        <input
+          type="number"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(event) => onChange(Number(event.target.value))}
+        />
+        <em>{suffix}</em>
+      </div>
+    </label>
+  );
+}
+
+function SelectField({
+  label,
+  value,
+  options,
+  onChange,
+  className = "",
+}: {
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+  className?: string;
+}) {
+  return (
+    <label className={`select-field ${className}`}>
+      <span>{label}</span>
+      <select value={value} onChange={(event) => onChange(event.target.value)}>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function SegmentedField({
+  label,
+  value,
+  options,
+  onChange,
+  className = "",
+}: {
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+  className?: string;
+}) {
+  return (
+    <div className={`segmented-field ${className}`}>
+      <span>{label}</span>
+      <div
+        className="segmented-button-group"
+        style={{ "--segment-count": options.length } as React.CSSProperties}
+      >
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={option.value === value ? "segmented-button-active" : ""}
+            onClick={() => onChange(option.value)}
+            aria-pressed={option.value === value}
+          >
+            {option.label}
           </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PlanStepHeader({
+  step,
+  title,
+  description,
+}: {
+  step: number;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="plan-step-header">
+      <span>{step}</span>
+      <div>
+        <h2>{title}</h2>
+        <p>{description}</p>
+      </div>
+    </div>
+  );
+}
+
+function MilestoneRow({
+  item,
+  index,
+  confirmedDate,
+  isComplete,
+  onToggleComplete,
+  onMilestoneDateChange,
+  onTogglePaymentFunding,
+  onPaymentTotalChange,
+}: {
+  item: TimelineItem;
+  index: number;
+  confirmedDate: string | undefined;
+  isComplete: boolean;
+  onToggleComplete: (label: string) => void;
+  onMilestoneDateChange: (label: string, value: string) => void;
+  onTogglePaymentFunding: (label: string, type: 'cpf' | 'cash') => void;
+  onPaymentTotalChange: (label: string, value: number) => void;
+}) {
+  const [editingAmount, setEditingAmount] = useState(false);
+  const [amountText, setAmountText] = useState("");
+  const isInterchangeable = item.payment !== undefined && (item.payment.cpfOa > 0 && item.payment.cash > 0);
+
+  return (
+    <tr>
+      <td>
+        <div className="milestone-name">
+          <span>{index + 1}</span>
+          <div>
+            <strong>{item.label}</strong>
+            <p>{item.note}</p>
+          </div>
+        </div>
+      </td>
+      <td>{item.payment?.label ?? "No payment expected"}</td>
+      <td>
+        {item.payment ? (
+          <div>
+            {editingAmount ? (
+              <input
+                type="text"
+                inputMode="numeric"
+                value={amountText}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw === "" || /^\d+$/.test(raw)) {
+                    setAmountText(raw);
+                  }
+                }}
+                onBlur={() => {
+                  const num = Number(amountText);
+                  if (!Number.isNaN(num) && num > 0) {
+                    onPaymentTotalChange(item.label, num);
+                  }
+                  setEditingAmount(false);
+                  setAmountText("");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    (e.target as HTMLInputElement).blur();
+                  }
+                }}
+                className="milestone-amount-input"
+                autoFocus
+              />
+            ) : (
+              <strong
+                className="milestone-amount-editable"
+                onClick={() => {
+                  setAmountText(String(item.payment!.total));
+                  setEditingAmount(true);
+                }}
+                title="Click to edit actual amount"
+              >
+                {currency(item.payment.total)}
+              </strong>
+            )}
+            <div className="milestone-payment-tags">
+              {item.payment.cpfOa > 0 && (
+                <span
+                  className={`milestone-tag milestone-tag-cpf ${isInterchangeable ? "milestone-tag-interactive" : ""}`}
+                  onClick={isInterchangeable ? () => onTogglePaymentFunding(item.label, 'cpf') : undefined}
+                  title={isInterchangeable ? "Click to move to Cash" : undefined}
+                >
+                  CPF {currency(item.payment.cpfOa)}
+                </span>
+              )}
+              {item.payment.cash > 0 && (
+                <span
+                  className={`milestone-tag milestone-tag-cash ${isInterchangeable ? "milestone-tag-interactive" : ""}`}
+                  onClick={isInterchangeable ? () => onTogglePaymentFunding(item.label, 'cash') : undefined}
+                  title={isInterchangeable ? "Click to move to CPF" : undefined}
+                >
+                  Cash {currency(item.payment.cash)}
+                </span>
+              )}
+
+            </div>
+          </div>
+        ) : (
+          "-"
+        )}
+        <p>{item.date}</p>
+      </td>
+      <td>
+        <input
+          type="date"
+          value={confirmedDate ?? ""}
+          onChange={(event) => onMilestoneDateChange(item.label, event.target.value)}
+          aria-label={`Expected date for ${item.label}`}
+        />
+      </td>
+      <td>
+        <button
+          type="button"
+          className={`milestone-status ${isComplete ? "milestone-status-done" : ""}`}
+          onClick={() => onToggleComplete(item.label)}
+          aria-pressed={isComplete}
+        >
+          <span className="milestone-status-box">
+            {isComplete ? <Icon name="check" /> : <span className="milestone-status-empty" />}
+          </span>
+          {isComplete ? "Done" : "Confirm"}
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+function FundingBreakdown({
+  hdbLoan,
+  hdbLoanShare,
+  cpf,
+  cpfShare,
+  cash,
+  cashShare,
+  ehgGrant,
+  grantShare,
+}: {
+  hdbLoan: number;
+  hdbLoanShare: number;
+  cpf: number;
+  cpfShare: number;
+  cash: number;
+  cashShare: number;
+  ehgGrant: number;
+  grantShare: number;
+}) {
+  return (
+    <div className="funding-box">
+      <h3>Estimated Funding Breakdown</h3>
+      <div className="funding-content">
+        <div
+          className="donut"
+          style={{
+            ["--loan" as string]: `${hdbLoanShare * 3.6}deg`,
+            ["--cpf" as string]: `${(hdbLoanShare + cpfShare) * 3.6}deg`,
+            ["--cash" as string]: `${(hdbLoanShare + cpfShare + cashShare) * 3.6}deg`,
+          }}
+          aria-hidden="true"
+        />
+        <div className="funding-lines">
+          <FundingLegendItem label={`HDB Loan (${hdbLoanShare}%)`} value={currency(hdbLoan)} color="oklch(var(--color-futuristic-teal))" />
+          <FundingLegendItem label={`CPF Usage (${cpfShare}%)`} value={currency(cpf)} color="oklch(70% 0.13 178)" />
+          <FundingLegendItem label={`Cash (${cashShare}%)`} value={currency(cash)} color="oklch(68% 0.11 292)" />
+          <FundingLegendItem label={`EHG Grant (${grantShare}%)`} value={currency(ehgGrant)} color="oklch(75% 0.12 95)" />
         </div>
       </div>
+    </div>
+  );
+}
+
+function SummaryLine({ label, value, tooltip }: { label: string; value: string; tooltip?: string }) {
+  const [showTip, setShowTip] = useState(false);
+  const tipId = useId();
+  return (
+    <div className="summary-line">
+      <span>
+        {label}
+        {tooltip && (
+          <span
+            className="bto-breakdown-info"
+            onMouseEnter={() => setShowTip(true)}
+            onMouseLeave={() => setShowTip(false)}
+            onFocus={() => setShowTip(true)}
+            onBlur={() => setShowTip(false)}
+            aria-describedby={tipId}
+            tabIndex={0}
+          >
+            <Icon name="info" />
+            {showTip && (
+              <span id={tipId} className="bto-tooltip" role="tooltip">
+                {tooltip}
+              </span>
+            )}
+          </span>
+        )}
+      </span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function FundingLegendItem({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div className="funding-legend-item">
+      <div className="funding-legend-row">
+        <span className="funding-legend-dot" style={{ backgroundColor: color }} />
+        <span>{label}</span>
+      </div>
+      <strong>{value}</strong>
     </div>
   );
 }
@@ -510,411 +940,13 @@ function calculateMonthlyPayment(
   const months = tenureYears * 12;
   const monthlyRate = annualRatePercent / 100 / 12;
 
-  if (monthlyRate <= 0) {
-    return principal / months;
-  }
+  if (monthlyRate <= 0) return principal / months;
 
-  return (
-    (principal * monthlyRate) /
-    (1 - Math.pow(1 + monthlyRate, -months))
-  );
+  return (principal * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -months));
 }
 
 function getLoanTenureMax(financing: FinancingType) {
-  return financing === "hdb" ? HDB_LOAN_TENURE_MAX : BANK_LOAN_TENURE_MAX;
-}
-
-function getFinancingLabel(financing: FinancingType) {
-  if (financing === "hdb") return "HDB loan";
-  if (financing === "bank") return "Bank loan";
-  return "No-loan plan";
-}
-
-function formatRate(value: number) {
-  return value.toLocaleString("en-SG", {
-    minimumFractionDigits: value % 1 === 0 ? 0 : 2,
-    maximumFractionDigits: 2,
-  });
-}
-
-function ScenarioFact({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="scenario-fact">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
-
-function ScenarioSegmentedControl({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: { value: string; label: string }[];
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="scenario-segmented-field">
-      <p className="field-label">{label}</p>
-      <div className="scenario-segmented-control">
-        {options.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            className={option.value === value ? "scenario-segment-active" : ""}
-            onClick={() => onChange(option.value)}
-            aria-pressed={option.value === value}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function InterestRateField({
-  value,
-  financing,
-  onChange,
-}: {
-  value: number;
-  financing: FinancingType;
-  onChange: (value: number) => void;
-}) {
-  const helperText =
-    financing === "hdb"
-      ? `Default uses the current HDB concessionary rate, ${formatRate(
-          DEFAULT_LOAN_INTEREST_RATE
-        )}% p.a.`
-      : "Use your expected package rate.";
-
-  return (
-    <div className="loan-rate-field">
-      <div>
-        <label className="field-label" htmlFor="loan-interest-rate">
-          Planning interest rate
-        </label>
-        <p className="mt-1 text-sm leading-6 text-warm-stone">{helperText}</p>
-      </div>
-      <div className="loan-rate-control">
-        <input
-          id="loan-interest-rate"
-          type="number"
-          min={LOAN_INTEREST_RATE_MIN}
-          max={LOAN_INTEREST_RATE_MAX}
-          step={0.05}
-          value={value}
-          onChange={(event) => onChange(Number(event.target.value))}
-          aria-label="Planning interest rate"
-        />
-        <span>% p.a.</span>
-      </div>
-    </div>
-  );
-}
-
-type TimelineFlowGroup = {
-  date: string;
-  items: TimelineDisplayItem[];
-  firstIndex: number;
-  totalPayment: number;
-  cpfOa: number;
-  cash: number;
-};
-
-type TimelineDisplayItem = TimelineItem & {
-  estimatedDate: string;
-  confirmedDate?: string;
-};
-
-function applyConfirmedMilestoneDates(
-  timeline: TimelineItem[],
-  confirmedMilestoneDates: Record<string, string>
-): TimelineDisplayItem[] {
-  return timeline.map((item) => {
-    const confirmedDate = confirmedMilestoneDates[item.label];
-    const confirmedDateLabel = confirmedDate
-      ? formatDateInputDisplay(confirmedDate)
-      : null;
-
-    return {
-      ...item,
-      estimatedDate: item.date,
-      date: confirmedDateLabel ?? item.date,
-      confirmedDate,
-    };
-  });
-}
-
-function getTimelineFlowGroups(timeline: TimelineDisplayItem[]) {
-  return timeline.reduce<TimelineFlowGroup[]>((groups, item, index) => {
-    const existing = groups.find((group) => group.date === item.date);
-    const payment = item.payment;
-    const totalPayment = payment?.total ?? 0;
-    const cpfOa = payment?.cpfOa ?? 0;
-    const cash = payment?.cash ?? 0;
-
-    if (existing) {
-      existing.items.push(item);
-      existing.totalPayment += totalPayment;
-      existing.cpfOa += cpfOa;
-      existing.cash += cash;
-      return groups;
-    }
-
-    groups.push({
-      date: item.date,
-      items: [item],
-      firstIndex: index,
-      totalPayment,
-      cpfOa,
-      cash,
-    });
-
-    return groups;
-  }, []);
-}
-
-function TimelineBoard({
-  timeline,
-  selectedProject,
-  completedMilestones,
-  confirmedMilestoneDates,
-  onToggleMilestoneComplete,
-  onMilestoneDateChange,
-}: {
-  timeline: TimelineItem[];
-  selectedProject: BtoProject | null;
-  completedMilestones: string[];
-  confirmedMilestoneDates: Record<string, string>;
-  onToggleMilestoneComplete: (label: string) => void;
-  onMilestoneDateChange: (label: string, value: string) => void;
-}) {
-  const displayTimeline = applyConfirmedMilestoneDates(
-    timeline,
-    confirmedMilestoneDates
-  );
-  const groups = getTimelineFlowGroups(displayTimeline);
-  const totalPayment = groups.reduce(
-    (total, group) => total + group.totalPayment,
-    0
-  );
-  const completedPayment = displayTimeline.reduce(
-    (total, item) =>
-      completedMilestones.includes(item.label)
-        ? total + (item.payment?.total ?? 0)
-        : total,
-    0
-  );
-  const remainingPayment = Math.max(totalPayment - completedPayment, 0);
-
-  return (
-    <section className="panel timeline-board-panel">
-      <div className="timeline-board-head">
-        <div>
-          <h3 className="text-lg font-semibold text-heritage-navy">
-            Milestones
-          </h3>
-        </div>
-        <div className="timeline-board-summary">
-          <span>
-            {selectedProject
-              ? `From ${selectedProject.launchMonth}`
-              : "Project sets dates"}
-          </span>
-          <strong>{currency(remainingPayment)}</strong>
-          <em>scheduled</em>
-        </div>
-      </div>
-
-      <div className="timeline-board-body">
-        <div className="timeline-month-grid" aria-label="Payment milestones by month">
-          {groups.map((group) => {
-            const completedInGroup = group.items.filter((item) =>
-              completedMilestones.includes(item.label)
-            ).length;
-            const groupComplete = completedInGroup === group.items.length;
-            const groupCompletedPayment = group.items.reduce(
-              (total, item) =>
-                completedMilestones.includes(item.label)
-                  ? total + (item.payment?.total ?? 0)
-                  : total,
-              0
-            );
-            const groupRemainingPayment = Math.max(
-              group.totalPayment - groupCompletedPayment,
-              0
-            );
-
-            return (
-              <div
-                key={group.date}
-                className="timeline-month-column"
-              >
-                <div
-                  className={`timeline-month-chip ${
-                    groupComplete ? "timeline-month-chip-complete" : ""
-                  }`}
-                >
-                  <span>{group.date}</span>
-                  <strong>
-                    {groupRemainingPayment > 0
-                      ? currency(groupRemainingPayment)
-                      : group.totalPayment > 0
-                        ? "Cleared"
-                        : "No payment"}
-                  </strong>
-                  <em>
-                    {completedInGroup}/{group.items.length} done
-                  </em>
-                </div>
-
-                <ol className="timeline-month-cards">
-                  {group.items.map((item, itemIndex) => (
-                    <TimelineBoardCard
-                      key={item.label}
-                      item={item}
-                      stepIndex={group.firstIndex + itemIndex}
-                      isComplete={completedMilestones.includes(item.label)}
-                      onToggleComplete={onToggleMilestoneComplete}
-                      onDateChange={onMilestoneDateChange}
-                    />
-                  ))}
-                </ol>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <p className="timeline-footnote">
-        CPF OA split is indicative.
-      </p>
-    </section>
-  );
-}
-
-function TimelineBoardCard({
-  item,
-  stepIndex,
-  isComplete,
-  onToggleComplete,
-  onDateChange,
-}: {
-  item: TimelineDisplayItem;
-  stepIndex: number;
-  isComplete: boolean;
-  onToggleComplete: (label: string) => void;
-  onDateChange: (label: string, value: string) => void;
-}) {
-  return (
-    <li
-      className={`timeline-flow-card ${
-        item.payment ? "timeline-flow-card-payment" : ""
-      } ${isComplete ? "timeline-flow-card-complete" : ""}`}
-    >
-      <div className="timeline-flow-card-main">
-        <div className="timeline-flow-card-top">
-          <span className="timeline-flow-step">
-            {String(stepIndex + 1).padStart(2, "0")}
-          </span>
-          <div>
-            <h5>{item.label}</h5>
-            <span>{item.date}</span>
-          </div>
-        </div>
-        <p>{item.note}</p>
-        {item.payment && (
-          <div className="timeline-board-payment">
-            <p className="text-xs font-semibold text-heritage-navy">
-              {item.payment.label}
-            </p>
-            <PaymentRequirement payment={item.payment} />
-          </div>
-        )}
-      </div>
-
-      <div className="timeline-flow-card-side">
-        {!item.payment && (
-          <div className="timeline-board-empty">No payment expected</div>
-        )}
-        <label className="milestone-date-field">
-          <span>Confirmed date</span>
-          <input
-            type="date"
-            value={item.confirmedDate ?? ""}
-            onChange={(event) => onDateChange(item.label, event.target.value)}
-            aria-label={`Confirmed date for ${item.label}`}
-          />
-          {item.confirmedDate && (
-            <em>Estimated {item.estimatedDate}</em>
-          )}
-        </label>
-        <button
-          type="button"
-          className={`timeline-complete-toggle ${
-            isComplete ? "timeline-complete-toggle-on" : ""
-          }`}
-          aria-pressed={isComplete}
-          onClick={() => onToggleComplete(item.label)}
-        >
-          <span className="timeline-complete-box" aria-hidden="true" />
-          {isComplete ? "Done" : "Mark done"}
-        </button>
-      </div>
-    </li>
-  );
-}
-
-function PaymentRequirement({
-  payment,
-}: {
-  payment: NonNullable<TimelineItem["payment"]>;
-}) {
-  const hasCpf = payment.cpfOa > 0;
-  const hasCash = payment.cash > 0;
-
-  if (!hasCpf || !hasCash) {
-    return (
-      <div className="payment-requirement">
-        <PaymentLine label={hasCpf ? "CPF OA amount" : "Cash amount"} value={payment.total} />
-      </div>
-    );
-  }
-
-  return (
-    <div className="payment-requirement">
-      <PaymentLine label="CPF OA estimate" value={payment.cpfOa} />
-      <PaymentLine label="Cash minimum" value={payment.cash} />
-    </div>
-  );
-}
-
-function PaymentLine({
-  label,
-  value,
-}: {
-  label: string;
-  value: number;
-}) {
-  return (
-    <div className="payment-line">
-      <span>{label}</span>
-      <strong>{currency(value)}</strong>
-    </div>
-  );
-}
-
-function CostRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="cost-row">
-      <span className="min-w-0 text-warm-stone">{label}</span>
-      <span className="cost-row-value">{value}</span>
-    </div>
-  );
+  if (financing === "bank") return BANK_LOAN_TENURE_MAX;
+  if (financing === "none") return BANK_LOAN_TENURE_MAX;
+  return HDB_LOAN_TENURE_MAX;
 }

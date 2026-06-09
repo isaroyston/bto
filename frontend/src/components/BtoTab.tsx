@@ -1,19 +1,17 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { FLAT_TYPE_OPTIONS } from "../constants";
 import type { BtoFlatVariant, BtoProject } from "../policies/policyConfig";
-import { FactItem } from "./FactItem";
 import type {
   BtoDecisionScore,
-  BtoScoreMode,
   BtoScorePreset,
   FlatType,
 } from "../types";
 import {
-  BTO_SCORE_MODE_OPTIONS,
   BTO_SCORE_COMPONENT_DETAILS,
   BTO_SCORE_PRESET_DETAILS,
   BTO_SCORE_PRESET_OPTIONS,
   scoreBtoProjects,
+  type BtoScoreWeights,
 } from "../utils/btoScoring";
 import { getLaunchMonthSortValue } from "../utils/date";
 import { currency } from "../utils/format";
@@ -22,9 +20,9 @@ import {
   getBtoProjectSourceLabel,
   getBtoProjectSourceNote,
 } from "../utils/sourceCredits";
+import { Icon, PageHeader, Pill, type IconName } from "./DashboardUi";
 
 type BtoTabProps = {
-  btoProjects: BtoProject[];
   btoLoading: boolean;
   btoError: string | null;
   availableYears: number[];
@@ -34,15 +32,16 @@ type BtoTabProps = {
   selectedFlatType: FlatType;
   loanAmount: number;
   ehgGrant: number;
-  scoreMode: BtoScoreMode;
+  totalAffordability: number;
   scorePreset: BtoScorePreset;
+  scoreWeights: BtoScoreWeights;
   selectedProjectId: string | null;
   onRetry: () => void;
   onYearFilterChange: (value: string) => void;
   onTownQueryChange: (value: string) => void;
   onFlatTypeChange: (value: FlatType) => void;
-  onScoreModeChange: (value: BtoScoreMode) => void;
   onScorePresetChange: (value: BtoScorePreset) => void;
+  onScoreWeightsChange: (value: BtoScoreWeights) => void;
   onSelectProject: (projectId: string) => void;
   onResetFilters: () => void;
 };
@@ -70,15 +69,24 @@ type CompareRow = {
 const MAX_COMPARE_PROJECTS = 4;
 const SCORE_COMPONENT_ORDER = [
   "affordability",
-  "commute",
   "centrality",
+  "commute",
   "wait",
   "supply",
-  "quality",
 ] as const;
 
+const SCORE_COMPONENT_ICONS: Record<
+  (typeof SCORE_COMPONENT_ORDER)[number],
+  IconName
+> = {
+  affordability: "wallet",
+  centrality: "chart",
+  commute: "metro",
+  wait: "clock",
+  supply: "cube",
+};
+
 export function BtoTab({
-  btoProjects,
   btoLoading,
   btoError,
   availableYears,
@@ -88,26 +96,25 @@ export function BtoTab({
   selectedFlatType,
   loanAmount,
   ehgGrant,
-  scoreMode,
+  totalAffordability,
   scorePreset,
+  scoreWeights,
   selectedProjectId,
   onRetry,
   onYearFilterChange,
   onTownQueryChange,
   onFlatTypeChange,
-  onScoreModeChange,
   onScorePresetChange,
+  onScoreWeightsChange,
   onSelectProject,
   onResetFilters,
 }: BtoTabProps) {
   const [activeLaunch, setActiveLaunch] = useState<string | null>(null);
   const [comparedProjectIds, setComparedProjectIds] = useState<string[]>([]);
-  const [showScoreGuide, setShowScoreGuide] = useState(false);
-  const [showPlanContext, setShowPlanContext] = useState(false);
   const hasActiveFilters = yearFilter !== "latest" || townQuery.trim().length > 0;
   const launchGroups = useMemo(
-    () => groupProjectsByLaunch(filteredProjects, selectedFlatType),
-    [filteredProjects, selectedFlatType]
+    () => groupProjectsByLaunch(filteredProjects, selectedFlatType, loanAmount, ehgGrant, totalAffordability, scorePreset, scoreWeights),
+    [filteredProjects, selectedFlatType, loanAmount, ehgGrant, totalAffordability, scorePreset, scoreWeights]
   );
   const pricedProjectCount = useMemo(
     () =>
@@ -141,16 +148,16 @@ export function BtoTab({
   };
 
   return (
-    <section className="space-y-5">
-      <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold text-heritage-navy">BTO Radar</h2>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-warm-stone">
-            Browse launches, compare project facts, send one into Plan.
-          </p>
-        </div>
-        <SourceCreditLinks />
-      </header>
+    <section className="dashboard-page bto-dashboard">
+      <PageHeader
+        title="BTO Radar"
+        subtitle="Discover and compare BTO projects based on what matters to you."
+        action={
+          <div className="bto-header-actions">
+            <SourceCreditLinks />
+          </div>
+        }
+      />
 
       {btoLoading && (
         <div className="panel p-5 text-sm text-warm-stone">
@@ -169,7 +176,8 @@ export function BtoTab({
 
       {!btoLoading && !btoError && (
         <>
-          <div className="panel grid gap-4 p-4 lg:grid-cols-[180px_180px_minmax(220px,1fr)_auto] lg:items-end">
+          <div className="panel bto-filter-panel">
+            <div className="bto-filter-fields">
             <div>
               <label className="field-label" htmlFor="flat-type-filter">
                 Price view
@@ -222,8 +230,10 @@ export function BtoTab({
             </div>
 
             <div className="flex items-center justify-between gap-3 lg:justify-end">
-              <span className="text-sm text-warm-stone">
-                {launchGroups.length} launches, {filteredProjects.length} projects
+              <span className="bto-filter-count">
+                {launchGroups.length} launches, {filteredProjects.length} projects,
+                {" "}
+                {pricedProjectCount} priced
               </span>
               {hasActiveFilters && (
                 <button type="button" className="btn-secondary" onClick={onResetFilters}>
@@ -231,108 +241,20 @@ export function BtoTab({
                 </button>
               )}
             </div>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-3">
-            <DecisionMetric
-              label="Launches in view"
-              value={launchGroups.length}
-            />
-            <DecisionMetric
-              label={`${selectedFlatType} price records`}
-              value={pricedProjectCount}
-            />
-            <DecisionMetric
-              label="Projects loaded"
-              value={btoProjects.length}
-            />
-          </div>
-
-          <div className="panel overflow-hidden">
-            <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_220px_max-content] lg:items-end">
-              <div className="grid min-w-0 gap-2">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className="field-label">Decision score</span>
-                  <span className="rounded-sm bg-heritage-navy/[0.04] px-2 py-1 text-xs leading-5 text-warm-stone">
-                    {scoreMode === "buyer-fit"
-                      ? `Using ${currency(loanAmount + ehgGrant)} estimate`
-                      : "Plan context ignored"}
-                  </span>
-                </div>
-                <div className="scenario-segmented-control max-w-md">
-                  {BTO_SCORE_MODE_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      className={
-                        scoreMode === option.value ? "scenario-segment-active" : ""
-                      }
-                      onClick={() => onScoreModeChange(option.value)}
-                      aria-pressed={scoreMode === option.value}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="field-label" htmlFor="score-preset">
-                  Priority
-                </label>
-                <select
-                  id="score-preset"
-                  value={scorePreset}
-                  onChange={(event) =>
-                    onScorePresetChange(event.target.value as BtoScorePreset)
-                  }
-                  className="control mt-2 h-10 w-full"
-                >
-                  {BTO_SCORE_PRESET_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-wrap gap-2 lg:justify-end">
-                <button
-                  type="button"
-                  className="btn-secondary h-10 whitespace-nowrap"
-                  onClick={() => setShowPlanContext((current) => !current)}
-                  aria-expanded={showPlanContext}
-                >
-                  {showPlanContext ? "Hide context" : "Plan context"}
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary h-10 whitespace-nowrap"
-                  onClick={() => setShowScoreGuide((current) => !current)}
-                  aria-expanded={showScoreGuide}
-                >
-                  {showScoreGuide ? "Hide guide" : "Score guide"}
-                </button>
-              </div>
             </div>
-
-            {showPlanContext && (
-              <div className="border-t border-heritage-navy/10">
-                <PlanContextPanel
-                  selectedFlatType={selectedFlatType}
-                  loanAmount={loanAmount}
-                  ehgGrant={ehgGrant}
-                  scoreMode={scoreMode}
-                />
-              </div>
-            )}
-
-            {showScoreGuide && (
-              <div className="border-t border-heritage-navy/10">
-                <ScoreGuide
-                  activePreset={scorePreset}
-                  activeMode={scoreMode}
-                />
-              </div>
-            )}
+            <div className="active-filter-row">
+              <span>Active filters:</span>
+              <Pill tone="blue">
+                {FLAT_TYPE_OPTIONS.find((option) => option.value === selectedFlatType)?.label ??
+                  selectedFlatType}
+              </Pill>
+              {townQuery.trim() && <Pill tone="blue">{townQuery.trim()}</Pill>}
+              {hasActiveFilters && (
+                <button type="button" onClick={onResetFilters}>
+                  Clear all
+                </button>
+              )}
+            </div>
           </div>
 
           {launchGroups.length === 0 ? (
@@ -340,17 +262,14 @@ export function BtoTab({
               No projects match the current filters.
             </div>
           ) : (
-            <div className="grid gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
+            <div className="bto-results-layout">
               <div className="panel overflow-hidden">
                 <div className="border-b border-heritage-navy/10 p-4">
                   <h3 className="text-base font-semibold text-heritage-navy">
-                    Launch months
+                    Launches
                   </h3>
-                  <p className="mt-1 text-sm text-warm-stone">
-                    Pick a launch.
-                  </p>
                 </div>
-                <div className="divide-y divide-heritage-navy/10">
+                <div className="launch-list-grid">
                   {launchGroups.map((group) => (
                     <LaunchButton
                       key={group.key}
@@ -370,8 +289,11 @@ export function BtoTab({
                   selectedFlatType={selectedFlatType}
                   loanAmount={loanAmount}
                   ehgGrant={ehgGrant}
-                  scoreMode={scoreMode}
+                  totalAffordability={totalAffordability}
                   scorePreset={scorePreset}
+                  scoreWeights={scoreWeights}
+                  onScorePresetChange={onScorePresetChange}
+                  onScoreWeightsChange={onScoreWeightsChange}
                   selectedProjectId={selectedProjectId}
                   onToggleCompareProject={handleToggleCompareProject}
                   onSelectProject={onSelectProject}
@@ -382,248 +304,6 @@ export function BtoTab({
         </>
       )}
     </section>
-  );
-}
-
-function DecisionMetric({
-  label,
-  value,
-}: {
-  label: string;
-  value: number;
-}) {
-  return (
-    <div className="panel flex items-center justify-between gap-4 px-4 py-3">
-      <span className="text-sm text-warm-stone">{label}</span>
-      <span className="text-lg font-semibold text-heritage-navy">
-        {value.toLocaleString("en-SG")}
-      </span>
-    </div>
-  );
-}
-
-function PlanContextPanel({
-  selectedFlatType,
-  loanAmount,
-  ehgGrant,
-  scoreMode,
-}: {
-  selectedFlatType: FlatType;
-  loanAmount: number;
-  ehgGrant: number;
-  scoreMode: BtoScoreMode;
-}) {
-  const estimatedRange = loanAmount + ehgGrant;
-
-  return (
-    <section className="grid gap-4 bg-futuristic-teal/[0.04] p-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold text-warm-stone">Plan context</p>
-          <h3 className="mt-1 text-base font-semibold text-heritage-navy">
-            Fields used by the BTO score
-          </h3>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-warm-stone">
-            {scoreMode === "buyer-fit"
-              ? "Buyer Fit compares each project against this current plan estimate."
-              : "Project Quality is neutral, so these personal fields are shown for reference only."}
-          </p>
-        </div>
-        <div className="rounded-hdb border border-futuristic-teal/30 bg-white px-3 py-2 text-sm">
-          <span className="block text-xs font-medium text-warm-stone">
-            Loan + grant
-          </span>
-          <span className="font-semibold tabular-nums text-heritage-navy">
-            {currency(estimatedRange)}
-          </span>
-        </div>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-4">
-        <ContextMiniFact label="Flat view" value={selectedFlatType} />
-        <ContextMiniFact label="Estimated loan" value={currency(loanAmount)} />
-        <ContextMiniFact label="EHG grant" value={currency(ehgGrant)} />
-        <ContextMiniFact label="Score mode" value={scoreMode === "buyer-fit" ? "Buyer Fit" : "Project Quality"} />
-      </div>
-    </section>
-  );
-}
-
-function ContextMiniFact({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-hdb border border-heritage-navy/10 bg-white px-3 py-2">
-      <p className="text-xs text-warm-stone">{label}</p>
-      <p className="mt-1 truncate text-sm font-semibold text-heritage-navy" title={value}>
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function ScoreGuide({
-  activePreset,
-  activeMode,
-}: {
-  activePreset: BtoScorePreset;
-  activeMode: BtoScoreMode;
-}) {
-  return (
-    <section>
-      <div className="grid gap-5 border-b border-heritage-navy/10 bg-heritage-navy/[0.02] p-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-        <div>
-          <p className="text-xs font-semibold text-warm-stone">Score guide</p>
-          <h3 className="mt-1 text-lg font-semibold text-heritage-navy">
-            How projects are ranked
-          </h3>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-warm-stone">
-            Scores are launch-relative. Missing metrics are removed from the
-            calculation and the remaining weights are normalised, so a project is
-            not punished for data that the source has not published.
-          </p>
-        </div>
-        <div className="grid gap-2 text-sm">
-          <LegendLine
-            label="Buyer Fit"
-            value="Adds your loan + EHG estimate to the same project facts."
-            isActive={activeMode === "buyer-fit"}
-          />
-          <LegendLine
-            label="Project Quality"
-            value="Ignores household income and ranks the launch neutrally."
-            isActive={activeMode === "project-quality"}
-          />
-        </div>
-      </div>
-
-      <div className="grid gap-6 p-5 xl:grid-cols-[minmax(0,1fr)_minmax(340px,0.8fr)]">
-        <div className="min-w-0">
-          <div className="mb-3 flex items-center justify-between gap-4">
-            <h4 className="text-sm font-semibold text-heritage-navy">
-              Weight presets
-            </h4>
-            <span className="text-xs text-warm-stone">
-              Active: {BTO_SCORE_PRESET_DETAILS[activePreset].label}
-            </span>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            {BTO_SCORE_PRESET_OPTIONS.map((option) => {
-              const preset = BTO_SCORE_PRESET_DETAILS[option.value];
-
-              return (
-                <div
-                  key={option.value}
-                  className={`border-t pt-3 ${
-                    option.value === activePreset
-                      ? "border-futuristic-teal"
-                      : "border-heritage-navy/10"
-                  }`}
-                >
-                  <div className="mb-3 flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-heritage-navy">
-                        {preset.label}
-                      </p>
-                      <p className="mt-1 text-xs leading-5 text-warm-stone">
-                        {preset.focus}
-                      </p>
-                    </div>
-                    {option.value === activePreset && (
-                      <span className="rounded-sm bg-good-soft px-2 py-0.5 text-xs font-semibold text-good">
-                        Active
-                      </span>
-                    )}
-                  </div>
-                  <div className="grid gap-2">
-                    {SCORE_COMPONENT_ORDER.map((component) => (
-                      <WeightBar
-                        key={component}
-                        label={BTO_SCORE_COMPONENT_DETAILS[component].shortLabel}
-                        weight={preset.weights[component]}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="min-w-0">
-          <h4 className="text-sm font-semibold text-heritage-navy">
-            Metrics and confidence
-          </h4>
-          <div className="mt-3 divide-y divide-heritage-navy/10 border-y border-heritage-navy/10">
-            {SCORE_COMPONENT_ORDER.map((component) => {
-              const detail = BTO_SCORE_COMPONENT_DETAILS[component];
-
-              return (
-                <div key={component} className="grid gap-1 py-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-heritage-navy">
-                      {detail.label}
-                    </p>
-                    <span className="text-xs font-medium text-warm-stone">
-                      {detail.shortLabel}
-                    </span>
-                  </div>
-                  <p className="text-xs leading-5 text-warm-stone">
-                    {detail.description}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-          <div className="mt-4 grid gap-2 text-xs leading-5 text-warm-stone">
-            <LegendLine label="Strong data" value="4 or more score components available." />
-            <LegendLine label="Partial data" value="3 score components available." />
-            <LegendLine label="Limited data" value="Fewer than 3 components available." />
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function WeightBar({ label, weight }: { label: string; weight: number }) {
-  return (
-    <div className="grid grid-cols-[72px_minmax(0,1fr)_36px] items-center gap-2">
-      <span className="text-xs font-medium text-warm-stone">{label}</span>
-      <span
-        className="h-2 overflow-hidden rounded-full bg-heritage-navy/10"
-        aria-hidden="true"
-      >
-        <span
-          className="block h-full rounded-full bg-futuristic-teal"
-          style={{ width: `${weight}%` }}
-        />
-      </span>
-      <span className="text-right text-xs font-semibold text-heritage-navy">
-        {weight}
-      </span>
-    </div>
-  );
-}
-
-function LegendLine({
-  label,
-  value,
-  isActive = false,
-}: {
-  label: string;
-  value: string;
-  isActive?: boolean;
-}) {
-  return (
-    <div
-      className={`grid gap-1 rounded-sm border px-3 py-2 ${
-        isActive
-          ? "border-futuristic-teal bg-futuristic-teal/[0.06]"
-          : "border-heritage-navy/10 bg-white"
-      }`}
-    >
-      <span className="font-semibold text-heritage-navy">{label}</span>
-      <span>{value}</span>
-    </div>
   );
 }
 
@@ -639,33 +319,30 @@ function LaunchButton({
   return (
     <button
       type="button"
-      className={`grid w-full gap-2 p-4 text-left transition-colors duration-200 ${
+      className={`launch-list-button ${
         isActive
-          ? "bg-heritage-navy/[0.05]"
-          : "bg-white hover:bg-heritage-navy/[0.025]"
+          ? "launch-list-button-active"
+          : "launch-list-button-idle"
       }`}
       title={`Show projects launched in ${group.key}`}
       onClick={onClick}
       aria-pressed={isActive}
     >
-      <span className="flex items-start justify-between gap-4">
-        <span className="font-semibold text-heritage-navy">{group.key}</span>
-        <span className="text-sm text-warm-stone">
+      <span className="launch-list-main">
+        <strong>{group.key}</strong>
+        <span>
           {group.projects.length} {group.projects.length === 1 ? "project" : "projects"}
         </span>
       </span>
-      <span className="flex justify-end text-sm text-warm-stone">
-        <span>{formatNumber(group.totalUnits)} units</span>
-      </span>
-      <span className="text-sm text-heritage-navy">
+      <span className="launch-list-price">
         {group.lowestPrice
           ? `From ${currency(group.lowestPrice)}`
           : "Price not listed"}
       </span>
-      <span className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-warm-stone">
+      <span className="launch-list-meta">
+        <span>{formatNumber(group.totalUnits)} units</span>
         <span>{group.pricedProjectCount}/{group.projects.length} priced</span>
-        <span>{group.distanceProjectCount}/{group.projects.length} MRT estimates</span>
-        <span>{group.ratingProjectCount}/{group.projects.length} ratings</span>
+        <span>{group.distanceProjectCount}/{group.projects.length} MRT</span>
       </span>
     </button>
   );
@@ -677,8 +354,11 @@ function ProjectDrilldown({
   selectedFlatType,
   loanAmount,
   ehgGrant,
-  scoreMode,
+  totalAffordability,
   scorePreset,
+  scoreWeights,
+  onScorePresetChange,
+  onScoreWeightsChange,
   selectedProjectId,
   onToggleCompareProject,
   onSelectProject,
@@ -688,8 +368,11 @@ function ProjectDrilldown({
   selectedFlatType: FlatType;
   loanAmount: number;
   ehgGrant: number;
-  scoreMode: BtoScoreMode;
+  totalAffordability: number;
   scorePreset: BtoScorePreset;
+  scoreWeights: BtoScoreWeights;
+  onScorePresetChange: (value: BtoScorePreset) => void;
+  onScoreWeightsChange: (value: BtoScoreWeights) => void;
   selectedProjectId: string | null;
   onToggleCompareProject: (projectId: string) => void;
   onSelectProject: (projectId: string) => void;
@@ -705,54 +388,251 @@ function ProjectDrilldown({
           flatType: selectedFlatType,
           loanAmount,
           ehgGrant,
+          totalAffordability,
         },
-        scoreMode,
-        scorePreset
+        "buyer-fit",
+        scorePreset,
+        scoreWeights
       ),
-    [ehgGrant, launch.projects, loanAmount, scoreMode, scorePreset, selectedFlatType]
+    [
+      ehgGrant,
+      launch.projects,
+      loanAmount,
+      totalAffordability,
+      scorePreset,
+      scoreWeights,
+      selectedFlatType,
+    ]
   );
 
   return (
-    <div className="panel bto-reveal overflow-hidden">
-      <div className="flex flex-col gap-2 border-b border-heritage-navy/10 p-4 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h3 className="text-base font-semibold text-heritage-navy">
-            {launch.key}
-          </h3>
-          <p className="mt-1 text-sm text-warm-stone">
-            Send a project to Plan to anchor price, launch month, and TOP.
-          </p>
+    <div className="bto-launch-content bto-reveal">
+      <div className="panel overflow-hidden">
+        <div className="project-list-head">
+          <div>
+            <h3>{launch.key}</h3>
+            <p>Choose one for Plan, or compare 2 to 4 projects.</p>
+          </div>
+          <div className="project-list-count">
+            <span>{launch.projects.length} projects</span>
+            <span>{formatNumber(launch.totalUnits)} units</span>
+          </div>
         </div>
-        <div className="text-sm text-warm-stone">
-          {launch.projects.length} projects, {formatNumber(launch.totalUnits)} units
+
+        <CompareTray
+          projects={comparedProjects}
+          selectedFlatType={selectedFlatType}
+          scores={projectScores}
+        />
+
+        <div className="project-card-grid">
+          {launch.projects.map((project) => (
+            <ProjectCard
+              key={project.id}
+              project={project}
+              selectedFlatType={selectedFlatType}
+              decisionScore={projectScores.get(project.id) ?? null}
+              isSelected={project.id === selectedProjectId}
+              isCompareSelected={comparedProjectIds.includes(project.id)}
+              isCompareDisabled={
+                comparedProjectIds.length >= MAX_COMPARE_PROJECTS &&
+                !comparedProjectIds.includes(project.id)
+              }
+              onToggleCompareProject={onToggleCompareProject}
+              onSelectProject={onSelectProject}
+            />
+          ))}
         </div>
       </div>
 
-      <CompareTray
-        projects={comparedProjects}
-        selectedFlatType={selectedFlatType}
+      <RadarSidePanel
+        comparedProjects={comparedProjects}
         scores={projectScores}
+        selectedFlatType={selectedFlatType}
+        scorePreset={scorePreset}
+        scoreWeights={scoreWeights}
+        onScorePresetChange={onScorePresetChange}
+        onScoreWeightsChange={onScoreWeightsChange}
+      />
+    </div>
+  );
+}
+
+function RadarSidePanel({
+  comparedProjects,
+  scores,
+  selectedFlatType,
+  scorePreset,
+  scoreWeights,
+  onScorePresetChange,
+  onScoreWeightsChange,
+}: {
+  comparedProjects: BtoProject[];
+  scores: Map<string, BtoDecisionScore>;
+  selectedFlatType: FlatType;
+  scorePreset: BtoScorePreset;
+  scoreWeights: BtoScoreWeights;
+  onScorePresetChange: (value: BtoScorePreset) => void;
+  onScoreWeightsChange: (value: BtoScoreWeights) => void;
+}) {
+  return (
+    <aside className="bto-side-panel">
+      <ScoreSettingsCard
+        scorePreset={scorePreset}
+        scoreWeights={scoreWeights}
+        onScorePresetChange={onScorePresetChange}
+        onScoreWeightsChange={onScoreWeightsChange}
       />
 
-      <div className="grid gap-3 p-4 md:grid-cols-2">
-        {launch.projects.map((project) => (
-          <ProjectCard
-            key={project.id}
-            project={project}
-            selectedFlatType={selectedFlatType}
-            decisionScore={projectScores.get(project.id) ?? null}
-            isSelected={project.id === selectedProjectId}
-            isCompareSelected={comparedProjectIds.includes(project.id)}
-            isCompareDisabled={
-              comparedProjectIds.length >= MAX_COMPARE_PROJECTS &&
-              !comparedProjectIds.includes(project.id)
-            }
-            compareCount={comparedProjectIds.length}
-            onToggleCompareProject={onToggleCompareProject}
-            onSelectProject={onSelectProject}
+      <div className="panel bto-compare-card">
+        <h3>Shortlist & Compare</h3>
+        <p>Add projects to compare up to 4 at a time.</p>
+        <div className="compare-slot-list">
+          {comparedProjects.map((project, index) => (
+            <div key={project.id}>
+              <span>{index + 1}</span>
+              <strong>{project.name}</strong>
+              <em>{scores.get(project.id)?.total ?? "-"}</em>
+            </div>
+          ))}
+          {Array.from({ length: Math.max(0, 4 - comparedProjects.length) }).map((_, index) => (
+            <div key={`empty-${index}`} className="compare-slot-empty">
+              <span>+</span>
+              <strong>Add project to compare</strong>
+            </div>
+          ))}
+        </div>
+        {comparedProjects.length >= 2 && (
+          <div className="mt-4">
+            <CompareTray
+              projects={comparedProjects}
+              selectedFlatType={selectedFlatType}
+              scores={scores}
+            />
+          </div>
+        )}
+      </div>
+    </aside>
+  );
+}
+
+function ScoreSettingsCard({
+  scorePreset,
+  scoreWeights,
+  onScorePresetChange,
+  onScoreWeightsChange,
+}: {
+  scorePreset: BtoScorePreset;
+  scoreWeights: BtoScoreWeights;
+  onScorePresetChange: (value: BtoScorePreset) => void;
+  onScoreWeightsChange: (value: BtoScoreWeights) => void;
+}) {
+  const handleWeightChange = (
+    key: (typeof SCORE_COMPONENT_ORDER)[number],
+    value: number
+  ) => {
+    if (scorePreset !== "custom") {
+      onScorePresetChange("custom");
+    }
+    onScoreWeightsChange(rebalanceScoreWeights(scoreWeights, key, value));
+  };
+
+  return (
+    <div className="panel bto-score-settings bto-score-card-open">
+      <div className="bto-score-card-head">
+        <h3>Score Weights</h3>
+      </div>
+      <label className="score-control-group" htmlFor="side-score-preset">
+        <span>Priority</span>
+        <select
+          id="side-score-preset"
+          value={scorePreset}
+          onChange={(event) =>
+            onScorePresetChange(event.target.value as BtoScorePreset)
+          }
+          className="control w-full"
+        >
+          {BTO_SCORE_PRESET_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <div className="score-selected-note">
+        <Icon name="check" />
+        <span>{BTO_SCORE_PRESET_DETAILS[scorePreset].focus}</span>
+      </div>
+
+      <div className="score-slider-list" aria-label="Radar score weights">
+        {SCORE_COMPONENT_ORDER.map((key) => (
+          <ScoreWeightSlider
+            key={key}
+            icon={SCORE_COMPONENT_ICONS[key]}
+            label={BTO_SCORE_COMPONENT_DETAILS[key].label}
+            description={BTO_SCORE_COMPONENT_DETAILS[key].description}
+            value={scoreWeights[key]}
+            onChange={(value) => handleWeightChange(key, value)}
           />
         ))}
       </div>
+    </div>
+  );
+}
+
+function ScoreWeightSlider({
+  label,
+  value,
+  icon,
+  onChange,
+  description,
+}: {
+  label: string;
+  value: number;
+  icon: IconName;
+  onChange: (value: number) => void;
+  description?: string;
+}) {
+  const [showTip, setShowTip] = useState(false);
+  const tipId = useId();
+  return (
+    <div className="score-weight-slider">
+      <div className="score-weight-slider-head">
+        <Icon name={icon} />
+        <span>
+          {label}
+          {description && (
+            <span
+              className="bto-breakdown-info"
+              onMouseEnter={() => setShowTip(true)}
+              onMouseLeave={() => setShowTip(false)}
+              onFocus={() => setShowTip(true)}
+              onBlur={() => setShowTip(false)}
+              aria-describedby={tipId}
+              tabIndex={0}
+            >
+              <Icon name="info" />
+              {showTip && (
+                <span id={tipId} className="bto-tooltip" role="tooltip">
+                  {description}
+                </span>
+              )}
+            </span>
+          )}
+        </span>
+        <strong>{value}%</strong>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={70}
+        step={1}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        aria-label={`${label} weight`}
+        className="interactive-slider score-mini-slider"
+      />
     </div>
   );
 }
@@ -764,7 +644,6 @@ function ProjectCard({
   isSelected,
   isCompareSelected,
   isCompareDisabled,
-  compareCount,
   onToggleCompareProject,
   onSelectProject,
 }: {
@@ -774,198 +653,212 @@ function ProjectCard({
   isSelected: boolean;
   isCompareSelected: boolean;
   isCompareDisabled: boolean;
-  compareCount: number;
   onToggleCompareProject: (projectId: string) => void;
   onSelectProject: (projectId: string) => void;
 }) {
   const selectedVariant = getSelectedVariant(project, selectedFlatType);
-  const downpayment = selectedVariant ? selectedVariant.basePrice * 0.1 : null;
+  const scoreTotal = decisionScore?.total ?? null;
+  const scoreColor = scoreTotal === null ? "" : scoreTotal >= 70 ? "bto-score-green" : scoreTotal >= 50 ? "bto-score-amber" : "bto-score-red";
+
+  const [showBudgetTip, setShowBudgetTip] = useState(false);
+  const budgetTipId = useId();
+  const affordabilityComp = decisionScore?.components.find((c) => c.key === "affordability");
+  const affordabilityGood = affordabilityComp && affordabilityComp.score >= 70 && affordabilityComp.reason.toLowerCase().includes("within");
+
+  const strengths = decisionScore
+    ? decisionScore.components
+        .filter((c) => c.score >= 70)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3)
+    : [];
+
+  const tradeoffs = decisionScore
+    ? decisionScore.components
+        .filter((c) => c.score < 50)
+        .sort((a, b) => a.score - b.score)
+        .slice(0, 2)
+    : [];
 
   return (
     <article
-      className={`grid h-full content-start gap-4 rounded-hdb border p-4 transition-colors duration-200 ${
-        isSelected
-          ? "border-heritage-navy/30 bg-heritage-navy/[0.04]"
-          : "border-heritage-navy/10 bg-white hover:border-heritage-navy/20"
+      className={`bto-project-card ${
+        isSelected ? "bto-project-card-selected" : ""
       }`}
     >
-      <div className="grid gap-4 sm:min-h-[4.75rem] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
-        <div className="grid min-w-0 content-start gap-1">
-          <div className="min-h-10">
-            {project.sourceUrl ? (
-              <a
-                href={project.sourceUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="project-card-title font-semibold text-heritage-navy hover:text-futuristic-teal"
-              >
-                {project.name}
-              </a>
-            ) : (
-              <h4 className="project-card-title font-semibold text-heritage-navy">
-                {project.name}
-              </h4>
-            )}
+      {/* HEADER */}
+      <div className="bto-card-header">
+        <div className="bto-card-header-main">
+          <div className="bto-card-header-text">
+            <h4 className="bto-card-title">{project.name}</h4>
+            <div className="bto-card-tags">
+              <ProjectTypeBadge type={project.btoType} />
+              <span className="bto-card-tag">{project.location}</span>
+              {project.nearestMrtDistanceMeters && project.nearestMrtDistanceMeters <= 800 && (
+                <span className="bto-card-tag bto-card-tag-accent">Near MRT</span>
+              )}
+            </div>
           </div>
-          <div className="min-h-5">
-            <ProjectTypeBadge type={project.btoType} />
-          </div>
-          <p className="min-h-5 text-sm text-warm-stone">{project.location}</p>
+
+          {decisionScore && (
+            <div className={`bto-score-badge ${scoreColor}`}>
+              <div className="bto-score-badge-value">{scoreTotal}</div>
+              <div className="bto-score-badge-label">/100</div>
+            </div>
+          )}
         </div>
-        <div className="flex flex-wrap gap-2 sm:justify-end">
+
+        <div className="bto-card-actions">
           <button
             type="button"
-            className={`inline-flex min-h-9 min-w-[98px] shrink-0 items-center justify-center whitespace-nowrap px-3 py-1.5 ${
-              isSelected ? "btn-primary" : "btn-secondary"
-            }`}
-            title="Use this project in your payment plan"
+            className={`bto-btn-use-plan ${isSelected ? "bto-btn-use-plan-active" : ""}`}
             onClick={() => onSelectProject(project.id)}
           >
             {isSelected ? "Selected" : "Use in Plan"}
           </button>
           <button
             type="button"
-            className={`inline-flex min-h-9 min-w-[98px] shrink-0 items-center justify-center whitespace-nowrap px-3 py-1.5 ${
-              isCompareSelected ? "btn-primary" : "btn-secondary"
-            }`}
-            title={
-              isCompareDisabled
-                ? "Remove a project before adding another comparison"
-                : "Add this project to the comparison table"
-            }
+            className={`bto-btn-compare ${isCompareSelected ? "bto-btn-compare-active" : ""}`}
             disabled={isCompareDisabled}
             aria-pressed={isCompareSelected}
             onClick={() => onToggleCompareProject(project.id)}
           >
-            {isCompareSelected ? "Comparing" : `Compare ${compareCount}/4`}
+            {isCompareSelected ? "Comparing" : "Compare"}
           </button>
+          {project.sourceUrl && (
+            <a
+              href={project.sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="bto-btn-view"
+            >
+              View Details
+            </a>
+          )}
         </div>
       </div>
 
-      <DecisionScorePanel score={decisionScore} />
-
-      <div className="grid gap-3 text-sm sm:grid-cols-2">
-        <FactItem
-          label={`${selectedFlatType} price`}
-          value={formatPrice(selectedVariant, selectedFlatType)}
-        />
-        <FactItem
-          label="Cash at signing"
-          value={downpayment ? currency(downpayment) : "Not listed"}
-        />
-        <FactItem
-          label="Expected TOP"
-          value={project.expectedTop ?? "Not listed"}
-        />
-        <FactItem
-          label="Units"
-          value={formatNumber(project.totalUnits)}
-        />
-        <FactItem label="Flat sizes" value={formatFlatSizes(project)} />
-        <FactItem label="Nearest MRT" value={formatNearestMrt(project)} />
-        <FactItem label="Location context" value={formatLocationContext(project)} />
-      </div>
-
-      <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-warm-stone">
-        <span>Wait: {project.waitTimeMonths ?? "Not listed"}</span>
-        <span>{getBtoProjectSourceNote(project)}</span>
-      </div>
-
-      <div className="project-source-credit">
-        {project.sourceUrl ? (
-          <a href={project.sourceUrl} target="_blank" rel="noreferrer">
-            Source: {getBtoProjectSourceLabel(project)}
-          </a>
-        ) : (
-          <span>Source: {getBtoProjectSourceLabel(project)}</span>
-        )}
-      </div>
-    </article>
-  );
-}
-
-function DecisionScorePanel({ score }: { score: BtoDecisionScore | null }) {
-  if (!score) return null;
-
-  const title = score.mode === "buyer-fit" ? "Buyer Fit" : "Project Quality";
-  const reasons = score.reasons.length
-    ? score.reasons.slice(0, 2)
-    : ["Not enough comparable data"];
-  const componentByKey = new Map(score.components.map((component) => [component.key, component]));
-
-  return (
-    <div className="grid min-h-[13.5rem] content-start gap-3 rounded-hdb border border-heritage-navy/10 bg-heritage-navy/[0.025] p-3">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold text-warm-stone">Decision score</p>
-          <p className="mt-1 text-sm font-semibold text-heritage-navy">{title}</p>
-        </div>
-        <div className="sm:text-right">
-          <p className="text-2xl font-semibold tabular-nums text-heritage-navy">
-            {formatDecisionScoreValue(score)}
-          </p>
-          <p className="text-xs font-medium text-warm-stone">{score.confidence}</p>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {reasons.map((reason) => (
-          <span
-            key={reason}
-            className="rounded-sm border border-heritage-navy/10 bg-white px-2 py-1 text-xs font-medium text-heritage-navy"
-          >
-            {reason}
-          </span>
-        ))}
-      </div>
-
-      <div className="grid gap-2 sm:grid-cols-3">
-        {SCORE_COMPONENT_ORDER.map((componentKey) => (
-          <ScoreComponentMeter
-            key={componentKey}
-            component={componentByKey.get(componentKey) ?? null}
-            label={BTO_SCORE_COMPONENT_DETAILS[componentKey].label}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ScoreComponentMeter({
-  component,
-  label,
-}: {
-  component: BtoDecisionScore["components"][number] | null;
-  label: string;
-}) {
-  const score = component?.score;
-  const hasScore = typeof score === "number" && Number.isFinite(score);
-
-  return (
-    <div className="grid gap-1">
-      <div className="flex items-center justify-between gap-2 text-xs">
-        <span className="font-medium text-warm-stone">{label}</span>
-        <span
-          className={`font-semibold tabular-nums ${
-            hasScore ? "text-heritage-navy" : "text-warm-stone/70"
-          }`}
-        >
-          {hasScore ? score : "Not listed"}
+      {/* KPI STRIP */}
+      <div className="bto-kpi-strip">
+        <span className="bto-kpi">
+          <Icon name="home" />
+          <strong>{selectedVariant ? currency(selectedVariant.basePrice) : `No ${selectedFlatType} price`}</strong>
+          <span className="bto-kpi-sublabel">est.</span>
+          {affordabilityComp && (
+            <span
+              className={`bto-kpi-badge ${affordabilityGood ? "bto-kpi-badge-good" : "bto-kpi-badge-warn"}`}
+              onMouseEnter={() => setShowBudgetTip(true)}
+              onMouseLeave={() => setShowBudgetTip(false)}
+              onFocus={() => setShowBudgetTip(true)}
+              onBlur={() => setShowBudgetTip(false)}
+              aria-describedby={budgetTipId}
+              tabIndex={0}
+            >
+              {affordabilityGood ? "✓ Budget" : "⚠ Over"}
+              {showBudgetTip && (
+                <span id={budgetTipId} className="bto-tooltip" role="tooltip">
+                  {affordabilityGood
+                    ? "This price is within your HDB loan + EHG grant estimate."
+                    : "This price exceeds your estimated budget. You may need additional cash or a larger loan."}
+                </span>
+              )}
+            </span>
+          )}
+        </span>
+        <span className="bto-kpi-divider" />
+        <span className="bto-kpi">
+          <Icon name="calendar" />
+          <strong>{project.expectedTop ?? "—"}</strong>
+          <span>TOP</span>
+        </span>
+        <span className="bto-kpi-divider" />
+        <span className="bto-kpi">
+          <Icon name="metro" />
+          <strong>{project.nearestMrtDistanceMeters ? formatDistance(project.nearestMrtDistanceMeters) : "—"}</strong>
+          <span>{project.nearestMrt ?? "MRT"}</span>
+        </span>
+        <span className="bto-kpi-divider" />
+        <span className="bto-kpi">
+          <Icon name="building" />
+          <strong>{formatNumber(project.totalUnits)}</strong>
+          <span>Units</span>
         </span>
       </div>
-      <span
-        className="h-1.5 overflow-hidden rounded-full bg-heritage-navy/10"
-        aria-hidden="true"
-      >
-        {hasScore && (
-          <span
-            className="block h-full rounded-full bg-futuristic-teal"
-            style={{ width: `${score}%` }}
-          />
-        )}
-      </span>
-    </div>
+
+      {/* INSIGHTS + DETAILS */}
+      {decisionScore && (
+        <div className="bto-insights-row">
+          {/* Insights */}
+          <div className="bto-insights">
+            {strengths.length > 0 && (
+              <div className="bto-insight-group">
+                <span className="bto-insight-title">Strengths</span>
+                <div className="bto-insight-chips">
+                  {strengths.map((c) => (
+                    <span key={c.key} className="bto-insight-chip bto-insight-strength">
+                      <Icon name="check" />
+                      {c.reason}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {tradeoffs.length > 0 && (
+              <div className="bto-insight-group">
+                <span className="bto-insight-title">Tradeoffs</span>
+                <div className="bto-insight-chips">
+                  {tradeoffs.map((c) => (
+                    <span key={c.key} className="bto-insight-chip bto-insight-tradeoff">
+                      <Icon name="alert" />
+                      {c.reason}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {strengths.length === 0 && tradeoffs.length === 0 && (
+              <div className="bto-insight-empty">
+                <Icon name="info" />
+                Not enough data to generate insights
+              </div>
+            )}
+          </div>
+
+          {/* Details */}
+          <div className="bto-details-panel">
+            <div className="bto-detail-item">
+              <span className="bto-detail-item-label">Category</span>
+              <span className="bto-detail-item-value">{formatProjectType(project.btoType) || "—"}</span>
+            </div>
+            <div className="bto-detail-item">
+              <span className="bto-detail-item-label">Flat sizes</span>
+              <span className="bto-detail-item-value">{formatFlatSizes(project)}</span>
+            </div>
+            <div className="bto-detail-item">
+              <span className="bto-detail-item-label">Source</span>
+              <span className="bto-detail-item-value">{getBtoProjectSourceLabel(project)}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FOOTER */}
+      <div className="bto-card-footer">
+        <span className="bto-card-footer-note">
+          <Icon name="info" />
+          {getBtoProjectSourceNote(project)}
+        </span>
+        {project.sourceUrl ? (
+          <a
+            href={project.sourceUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="bto-card-footer-link"
+          >
+            View source <Icon name="external" />
+          </a>
+        ) : null}
+      </div>
+    </article>
   );
 }
 
@@ -995,9 +888,6 @@ function CompareTray({
           <h4 className="text-sm font-semibold text-heritage-navy">
             Project comparison
           </h4>
-          <p className="text-xs leading-5 text-warm-stone">
-            Shows the fields available for the selected projects.
-          </p>
         </div>
         <span className="text-xs text-warm-stone">
           {projects.length}/{MAX_COMPARE_PROJECTS} selected
@@ -1226,7 +1116,7 @@ function plainCompareRow({
 function SourceCreditLinks() {
   return (
     <div className="source-credit-row" aria-label="BTO data credits">
-      <span>Data credits</span>
+      <span>Sources</span>
       {BTO_SOURCE_CREDITS.map((source) => (
         <a key={source.url} href={source.url} target="_blank" rel="noreferrer">
           {source.label}
@@ -1236,7 +1126,64 @@ function SourceCreditLinks() {
   );
 }
 
-function groupProjectsByLaunch(projects: BtoProject[], flatType: FlatType) {
+function rebalanceScoreWeights(
+  weights: BtoScoreWeights,
+  changedKey: (typeof SCORE_COMPONENT_ORDER)[number],
+  value: number
+): BtoScoreWeights {
+  const nextValue = Math.min(Math.max(Math.round(value), 0), 100);
+  const otherKeys = SCORE_COMPONENT_ORDER.filter((key) => key !== changedKey);
+  const remainder = 100 - nextValue;
+  const otherTotal = otherKeys.reduce((sum, key) => sum + weights[key], 0);
+
+  const nextWeights: BtoScoreWeights = {
+    ...weights,
+    [changedKey]: nextValue,
+  };
+
+  if (otherTotal <= 0) {
+    const base = Math.floor(remainder / otherKeys.length);
+    let extra = remainder - base * otherKeys.length;
+
+    otherKeys.forEach((key) => {
+      nextWeights[key] = base + (extra > 0 ? 1 : 0);
+      extra -= 1;
+    });
+
+    return nextWeights;
+  }
+
+  const weightedShares = otherKeys.map((key) => {
+    const raw = (weights[key] / otherTotal) * remainder;
+
+    return {
+      key,
+      floor: Math.floor(raw),
+      fraction: raw - Math.floor(raw),
+    };
+  });
+  const allocated = weightedShares.reduce((sum, share) => sum + share.floor, 0);
+  let extra = remainder - allocated;
+
+  weightedShares
+    .sort((a, b) => b.fraction - a.fraction)
+    .forEach((share) => {
+      nextWeights[share.key] = share.floor + (extra > 0 ? 1 : 0);
+      if (extra > 0) extra -= 1;
+    });
+
+  return nextWeights;
+}
+
+function groupProjectsByLaunch(
+  projects: BtoProject[],
+  flatType: FlatType,
+  loanAmount: number,
+  ehgGrant: number,
+  totalAffordability: number,
+  scorePreset: BtoScorePreset,
+  scoreWeights: BtoScoreWeights
+) {
   const groups = new Map<string, BtoProject[]>();
 
   projects.forEach((project) => {
@@ -1261,9 +1208,17 @@ function groupProjectsByLaunch(projects: BtoProject[], flatType: FlatType) {
         Boolean(project.btohq?.ratings)
       ).length;
 
+      const scores = scoreBtoProjects(
+        launchProjects,
+        { flatType, loanAmount, ehgGrant, totalAffordability },
+        "buyer-fit",
+        scorePreset,
+        scoreWeights
+      );
+
       return {
         key,
-        projects: [...launchProjects].sort(sortProjectsForLaunch(flatType)),
+        projects: [...launchProjects].sort(sortProjectsForLaunch(flatType, scores)),
         totalUnits,
         lowestPrice: prices.length ? Math.min(...prices) : null,
         pricedProjectCount: variants.length,
@@ -1280,8 +1235,20 @@ function hasAnyListedValue(row: CompareRow) {
   );
 }
 
-function sortProjectsForLaunch(flatType: FlatType) {
+function sortProjectsForLaunch(
+  flatType: FlatType,
+  scores: Map<string, BtoDecisionScore>
+) {
   return (a: BtoProject, b: BtoProject) => {
+    const scoreA = scores.get(a.id)?.total;
+    const scoreB = scores.get(b.id)?.total;
+
+    if (typeof scoreB === "number" && typeof scoreA === "number") {
+      return scoreB - scoreA;
+    }
+    if (typeof scoreB === "number") return 1;
+    if (typeof scoreA === "number") return -1;
+
     const variantA = getSelectedVariant(a, flatType);
     const variantB = getSelectedVariant(b, flatType);
 
