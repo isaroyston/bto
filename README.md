@@ -1,5 +1,5 @@
 <p align="center">
-  <img src=".github/assets/logo.svg" alt="HDB Planner" width="820">
+  <img src=".github/assets/logo.svg" alt="BTO Radar" width="820">
 </p>
 
 <p align="center">

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1120" height="220" viewBox="0 0 1120 220" role="img" aria-labelledby="title desc">
-  <title id="title">HDB Planner</title>
-  <desc id="desc">A clean retro block logo reading HDB Planner in yellow and orange on black.</desc>
+  <title id="title">BTO Radar</title>
+  <desc id="desc">A clean retro block logo reading BTO Radar in yellow and orange on black.</desc>
   <defs>
     <linearGradient id="gold" x1="0" x2="0" y1="24" y2="170" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#ffd900"/>
@@ -11,10 +11,10 @@
   </defs>
   <rect width="1120" height="220" fill="#111111"/>
   <g font-family="Impact, 'Arial Black', Haettenschweiler, 'Segoe UI Black', sans-serif" font-size="112" font-weight="900" letter-spacing="5">
-    <text x="560" y="150" text-anchor="middle" fill="none" stroke="#d48224" stroke-width="2.5" transform="translate(10 10)">HDB PLANNER</text>
-    <text x="560" y="150" text-anchor="middle" fill="none" stroke="#111111" stroke-width="7" transform="translate(5 5)">HDB PLANNER</text>
-    <text x="560" y="150" text-anchor="middle" fill="none" stroke="#d48224" stroke-width="2.5" transform="translate(4 4)">HDB PLANNER</text>
-    <text x="560" y="150" text-anchor="middle" fill="none" stroke="#111111" stroke-width="9">HDB PLANNER</text>
-    <text x="560" y="150" text-anchor="middle" fill="url(#gold)">HDB PLANNER</text>
+    <text x="560" y="150" text-anchor="middle" fill="none" stroke="#d48224" stroke-width="2.5" transform="translate(10 10)">BTO RADAR</text>
+    <text x="560" y="150" text-anchor="middle" fill="none" stroke="#111111" stroke-width="7" transform="translate(5 5)">BTO RADAR</text>
+    <text x="560" y="150" text-anchor="middle" fill="none" stroke="#d48224" stroke-width="2.5" transform="translate(4 4)">BTO RADAR</text>
+    <text x="560" y="150" text-anchor="middle" fill="none" stroke="#111111" stroke-width="9">BTO RADAR</text>
+    <text x="560" y="150" text-anchor="middle" fill="url(#gold)">BTO RADAR</text>
   </g>
 </svg>
