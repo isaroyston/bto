@@ -1,6 +1,6 @@
 import type { BtoFlatVariant } from "./policies/policyConfig";
 
-export type TabKey = "overview" | "plan" | "bto";
+export type TabKey = "overview" | "plan" | "bto" | "sources";
 export type FinancingType = "hdb" | "bank" | "none";
 export type SchemeType = "normal" | "staggered" | "dia";
 export type FlatType = BtoFlatVariant["type"];

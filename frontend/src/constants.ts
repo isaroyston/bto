@@ -4,6 +4,7 @@ export const TABS: { id: TabKey; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "plan", label: "Plan" },
   { id: "bto", label: "BTO Radar" },
+  { id: "sources", label: "Sources" },
 ];
 
 export const LOAN_MULTIPLIER = 60;

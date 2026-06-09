@@ -11,6 +11,7 @@ const tabIcons: Record<TabKey, IconName> = {
   overview: "home",
   plan: "clipboard",
   bto: "building",
+  sources: "document",
 };
 
 const tabButtonClass = (activeTab: TabKey, tab: TabKey) =>

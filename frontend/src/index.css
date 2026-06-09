@@ -1655,6 +1655,54 @@
     @apply text-right text-xs not-italic text-warm-stone;
   }
 
+  .sources-grid {
+    @apply grid gap-6 lg:grid-cols-2;
+  }
+
+  .sources-card-content {
+    @apply space-y-5 p-6;
+  }
+
+  .sources-intro {
+    @apply text-sm leading-6 text-warm-stone;
+  }
+
+  .sources-list {
+    @apply grid gap-2;
+  }
+
+  .sources-link {
+    @apply flex items-center gap-3 rounded-hdb border border-heritage-navy/10 p-4 transition-colors hover:bg-heritage-navy/[0.02];
+  }
+
+  .sources-link-icon {
+    @apply grid h-9 w-9 shrink-0 place-items-center rounded-full bg-futuristic-teal/10;
+  }
+
+  .sources-link-icon svg {
+    @apply h-4 w-4 text-futuristic-teal;
+  }
+
+  .sources-link-body {
+    @apply flex-1 min-w-0;
+  }
+
+  .sources-link-body strong {
+    @apply block text-sm font-bold text-heritage-navy;
+  }
+
+  .sources-link-body p {
+    @apply mt-0.5 text-xs text-warm-stone;
+  }
+
+  .sources-link-chevron {
+    @apply text-warm-stone/40;
+  }
+
+  .sources-link-chevron svg {
+    @apply h-4 w-4 rotate-90;
+  }
+
   .overview-metrics-strip {
     @apply grid gap-4 p-4 md:grid-cols-6;
   }

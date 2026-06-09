@@ -3,6 +3,7 @@ import { BtoTab } from "./components/BtoTab";
 import { Navigation } from "./components/Navigation";
 import { OverviewTab } from "./components/OverviewTab";
 import { PurchasePlanTab } from "./components/PurchasePlanTab";
+import { SourcesTab } from "./components/SourcesTab";
 import {
   FLAT_MAX,
   FLAT_MIN,
@@ -469,6 +470,8 @@ function App() {
             onResetFilters={handleResetBtoFilters}
           />
         )}
+
+        {activeTab === "sources" && <SourcesTab />}
         </div>
       </main>
     </div>
@@ -494,7 +497,7 @@ function getDefaultApplicationMonth() {
 
 function getInitialTab(): TabKey {
   const tab = new URLSearchParams(window.location.search).get("tab");
-  return tab === "plan" || tab === "bto" || tab === "overview" ? tab : "overview";
+  return tab === "plan" || tab === "bto" || tab === "sources" || tab === "overview" ? tab : "overview";
 }
 
 function getLoanTenureMax(financing: FinancingType) {
