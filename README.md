@@ -8,6 +8,10 @@
   payment timing, and BTO comparisons.
 </p>
 
+<p align="center">
+  <a href="https://react-app-ashy-chi.vercel.app/" target="_blank"><strong>Live App →</strong></a>
+</p>
+
 ## What It Does
 
 - Estimates loan eligibility from household income.
